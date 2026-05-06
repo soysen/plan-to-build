@@ -1,0 +1,54 @@
+name: Validate Agent Skills
+
+on:
+  push:
+    paths:
+      - '.github/skills/**/SKILL.md'
+  pull_request:
+    paths:
+      - '.github/skills/**/SKILL.md'
+
+jobs:
+  validate-markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check SKILL.md Template Structure
+        run: |
+          echo "Validating SKILL.md structure..."
+          ERROR=0
+          
+          # Find all SKILL.md files
+          for file in $(find .github/skills -name "SKILL.md"); do
+            echo "Checking $file"
+            
+            # Check for mandatory headers
+            if ! grep -q "## 🎯 簡介與目標" "$file" && ! grep -q "簡介" "$file"; then
+              echo "❌ Missing Introduction header in $file"
+              ERROR=1
+            fi
+            
+            if ! grep -q "## 🚦 使用時機" "$file" && ! grep -q "使用時機" "$file"; then
+              echo "❌ Missing Timing/Trigger header in $file"
+              ERROR=1
+            fi
+            
+            if ! grep -q "## 📦 預期輸出" "$file" && ! grep -q "輸出" "$file"; then
+              echo "❌ Missing Expected Output header in $file"
+              ERROR=1
+            fi
+            
+            if ! grep -q "## 🛠️ 執行步驟" "$file" && ! grep -q "步驟" "$file"; then
+              echo "❌ Missing Execution Steps header in $file"
+              ERROR=1
+            fi
+          done
+          
+          if [ $ERROR -eq 1 ]; then
+            echo "Validation failed. Please ensure all SKILL.md files follow the docs/templates/SKILL-TEMPLATE.md structure."
+            exit 1
+          else
+            echo "✅ All SKILL.md files passed structural validation!"
+          fi

@@ -1,5 +1,7 @@
 # Agent Skills
 
+> 🌐 [English Version](README_EN.md) | 🤝 [貢獻指南 (Contributing)](CONTRIBUTING.md)
+
 本目錄收錄所有 Copilot Agent 的工作流程 Skill，覆蓋從想法萌芽到生產部署的完整產品生命週期。每個 Skill 封裝一套資深工程師遵循的具體流程，讓 Agent 在正確的時機執行正確的事。
 
 > **不知道用哪個？** 告訴 Agent「using-agent-skills」，它會根據你的任務推薦最適合的 Skill。
@@ -8,57 +10,45 @@
 
 ## 產品生命週期地圖
 
-```
-💡 想法
-    └─ idea-refine
-
-🔎 驗證
-    └─ problem-validation
-
-📋 定義
-    └─ analyze-spec
-
-🏗️ 設計
-    └─ design-architecture
-    └─ api-and-interface-design
-
-📌 規劃
-    └─ plan-build
-    └─ create-issues
-    └─ context-engineering
-
-🔨 實作
-    ├─ tdd-build
-    ├─ incremental-implementation
-    ├─ source-driven-development
-    ├─ frontend-ui-engineering
-    └─ security-and-hardening（每個功能伴隨使用）
-
-🧪 驗證
-    ├─ write-tests
-    └─ browser-testing-with-devtools
-
-🔍 審查
-    ├─ code-review-and-quality
-    ├─ performance-optimization
-    └─ code-simplification
-
-📦 交付
-    ├─ git-commit
-    ├─ ci-cd-and-automation
-    ├─ documentation-and-adrs
-    └─ shipping-and-launch
-
-🚨 部署後
-    └─ post-deploy-monitoring
-
-📈 上線後
-    └─ post-launch-optimization
-
-🔁 學習與維護
-    ├─ retrospective-and-learnings
-    ├─ debugging-and-error-recovery
-    └─ deprecation-and-migration
+```mermaid
+graph TD
+    subgraph Ideation
+        A[💡 想法 Idea] -->|idea-refine| B[MVP]
+        B -->|problem-validation| C[驗證問題 Validated Problem]
+    end
+    
+    subgraph Definition & Design
+        C -->|analyze-spec| D[規格定義 Spec]
+        D -->|design-architecture| E[架構設計 Architecture]
+        E -->|api-and-interface-design| F[API 合約 API Contracts]
+    end
+    
+    subgraph Planning
+        F -->|plan-build| G[建置計畫 Build Plan]
+        G -->|create-issues| H[建立任務 Issues]
+        H -->|context-engineering| I[上下文設定 Agent Context]
+    end
+    
+    subgraph Implementation & Verification
+        I -->|write-tests| J[撰寫測試 Tests]
+        J -->|tdd-build / incremental| K[開始實作 Implementation]
+        K -->|security-and-hardening| L[安全審查 Security]
+        L -->|browser-testing| M[瀏覽器驗證 Browser Check]
+    end
+    
+    subgraph Review & Delivery
+        M -->|code-review-and-quality| N[程式碼審查 Code Review]
+        N -->|git-commit| O[提交 Commit]
+        O -->|ci-cd-and-automation| P[CI/CD]
+        P -->|documentation-and-adrs| Q[文件與 ADRs]
+        Q -->|shipping-and-launch| R[生產部署 Deployment]
+    end
+    
+    subgraph Post-Launch & Maintenance
+        R -->|post-deploy-monitoring| S[部署後監控 Health Check]
+        S -->|post-launch-optimization| T[成效追蹤 KPI Tracking]
+        T -->|retrospective-and-learnings| U[回顧學習 Retrospective]
+    end
 ```
 
 ---
