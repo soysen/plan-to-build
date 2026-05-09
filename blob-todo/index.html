@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blob Todo</title>
+<meta name="color-scheme" content="light dark">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav id="breadcrumb" aria-label="導航"></nav>
+<button id="add-btn" aria-label="新增任務">＋</button>
+<main id="blob-canvas">
+</main>
+<div id="empty-state" hidden>
+    <div id="empty-state-bubble">
+      <h2>今天有什麼要做的？</h2>
+      <p>用視覺化的方式管理你的任務，越重要的事佔的空間越大。</p>
+      <button id="empty-cta">＋ 新增第一個任務</button>
+    </div>
+  </div>
+<dialog id="task-modal" aria-modal="true">
+  <h2 id="modal-title">新增任務</h2>
+  <form id="task-form" novalidate>
+    <div class="field">
+      <label for="f-title">任務名稱 *</label>
+      <input id="f-title" type="text" maxlength="100" autocomplete="off" placeholder="例如：完成季度報告">
+      <span class="field-error" id="f-title-err" aria-live="polite"></span>
+    </div>
+    <div class="field">
+      <label>重要度 <span class="weight-val" id="weight-display">3</span></label>
+      <input id="f-weight" type="range" min="1" max="5" step="1" value="3">
+      <div class="weight-row"><span>低</span><span>中</span><span>高</span></div>
+    </div>
+    <div class="field">
+      <label for="f-deadline">截止日期（選填）</label>
+      <input id="f-deadline" type="date">
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="btn-delete" hidden>刪除</button>
+      <button type="button" id="btn-cancel">取消</button>
+      <button type="submit" id="btn-submit">新增</button>
+    </div>
+  </form>
+</dialog>
+<script src="app.js"></script>
+</body>
+</html>
