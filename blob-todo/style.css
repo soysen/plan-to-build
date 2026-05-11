@@ -179,7 +179,7 @@ body::after {
   position: fixed;
   inset: 0;
   top: 0;
-  overflow: hidden
+  overflow: hidden;
 }
 
 /* Empty state */
@@ -250,24 +250,53 @@ body::after {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18)
 }
 
-.blob {
+.blob-wrapper {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* 讓事件穿透到內層 */
+  transition: left .6s cubic-bezier(0.2, 0.8, 0.2, 1), top .6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* 緩慢的漂浮位移感 */
+  animation: float-motion var(--float-dur, 10s) ease-in-out var(--float-delay, 0s) infinite alternate;
+}
+
+@keyframes float-motion {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(12px, -18px); }
+  100% { transform: translate(-8px, 10px); }
+}
+
+.blob {
+  position: relative; /* 改為 relative */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
+  pointer-events: auto; /* 重新開啟事件 */
   border-radius: var(--shape);
   background: var(--blobColor);
   box-shadow: inset -5px -5px 15px rgba(0, 0, 0, 0.1), 0 10px 24px rgba(0, 0, 0, 0.12);
-  transition: transform .2s ease, filter .2s ease, opacity .4s ease, left .6s cubic-bezier(0.2, 0.8, 0.2, 1), top .6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter .2s ease, opacity .4s ease;
   padding: 12px;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  /* 大幅增強 3D 傾斜與視差感 */
+  transform: 
+    rotateY(calc(var(--mx, 0) * 25deg)) 
+    rotateX(calc(var(--my, 0) * -25deg))
+    scale(calc(1 + (abs(var(--mx, 0)) + abs(var(--my, 0))) * 0.05));
 }
 
 .blob:hover {
-  transform: scale(1.04);
-  filter: brightness(1.08)
+  filter: brightness(1.1);
+  /* Hover 時疊加明顯的內發光與強投影 */
+  box-shadow: 
+    inset 5px 5px 20px rgba(255, 255, 255, 0.4),
+    inset -5px -5px 15px rgba(0, 0, 0, 0.1), 
+    0 20px 45px rgba(0, 0, 0, 0.2);
 }
 
 .blob.done {
@@ -288,7 +317,10 @@ body::after {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   max-width: 90%;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  /* 文字視差：浮在表面上方 */
+  transform: translateZ(35px);
+  transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .blob.done .blob-title {
@@ -307,6 +339,8 @@ body::after {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* 視差感 */
+  transform: translateZ(25px);
 }
 
 .blob.done .blob-hint {
@@ -362,18 +396,24 @@ body::after {
 @keyframes pop-burst {
   0% {
     transform: scale(1);
-    opacity: 1
+    opacity: 1;
+    filter: brightness(1) blur(0);
   }
-
-  40% {
-    transform: scale(1.35);
-    opacity: .85;
-    filter: brightness(1.4)
+  15% {
+    transform: scale(0.8);
+    opacity: 1;
+    filter: brightness(1.2);
   }
-
+  45% {
+    transform: scale(2.2);
+    opacity: 1;
+    filter: brightness(3) blur(2px);
+    box-shadow: 0 0 50px #fff;
+  }
   100% {
-    transform: scale(0);
-    opacity: 0
+    transform: scale(0.1);
+    opacity: 0;
+    filter: brightness(5) blur(12px);
   }
 }
 
