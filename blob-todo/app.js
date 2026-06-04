@@ -135,6 +135,7 @@ const TaskStore = (() => {
     getTopLevel()       { return tasks.filter(t => !t.parentId); },
     getChildren(pid)    { return tasks.filter(t => t.parentId === pid); },
     getById(id)         { return tasks.find(t => t.id === id); },
+    getAll()            { return tasks; },
     getNextHint(pid)    {
       const c = tasks.filter(t => t.parentId === pid && !t.done);
       return c.length ? c.sort((a,b) => a.createdAt > b.createdAt ? -1 : 1)[0].title : null;
@@ -610,6 +611,13 @@ const App = {
     const isEmpty = tasks.length === 0;
     this.emptyState.hidden = !isEmpty;
     document.getElementById('add-btn').style.display = isEmpty ? 'none' : 'flex';
+    
+    // Check quota warning
+    const allTasks = TaskStore.getAll();
+    const warningEl = document.getElementById('quota-warning');
+    if (warningEl) {
+      warningEl.hidden = allTasks.length <= 400;
+    }
     
     // Sync physics engine with current tasks
     PhysicsEngine.sync(tasks, vw, vh);

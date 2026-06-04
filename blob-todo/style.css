@@ -28,62 +28,54 @@
   --btn-delete-hover: #ffdada;
   --backdrop: rgba(248, 249, 252, 0.7);
   --accent: #5c6285;
-  --glow-1: rgba(100, 160, 255, 0.15);
-  --glow-2: rgba(255, 140, 180, 0.15);
+  /* Soft Mint/Sage Green Theme */
+  --glow-1: rgba(168, 213, 186, 0.65);
+  /* Much stronger for Dark Mode */
+  --glow-2: rgba(100, 160, 255, 0.65);
+  --canvas-opacity: 0.75;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
     --bg: #0c0c14;
-    --surface: rgba(255, 255, 255, 0.03);
-    --border: rgba(255, 255, 255, 0.05);
-    --text: rgba(255, 255, 255, 0.85);
-    --text-muted: rgba(255, 255, 255, 0.35);
+    --surface: #020204;
+    /* Solid, opaque background */
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e1e1e6;
+    --text-muted: #8b8b9e;
     --color-none: hsl(220, 10%, 20%);
     --color-done: hsl(220, 8%, 15%);
-    --input-bg: rgba(255, 255, 255, 0.04);
-    --input-focus-bg: rgba(255, 255, 255, 0.07);
-    --input-focus-border: rgba(255, 255, 255, 0.15);
-    --btn-cancel-bg: rgba(255, 255, 255, 0.05);
-    --btn-cancel-hover: rgba(255, 255, 255, 0.1);
-    --btn-delete-bg: rgba(239, 68, 68, 0.1);
-    --btn-delete-hover: rgba(239, 68, 68, 0.2);
-    --backdrop: rgba(12, 12, 20, 0.8);
-    --accent: rgba(255, 255, 255, 0.7);
-    --glow-1: rgba(120, 180, 255, 0.08);
-    --glow-2: rgba(255, 120, 160, 0.08);
+    --input-bg: #2a2a3c;
+    --input-focus-bg: #2f2f45;
+    --input-focus-border: #a8d5ba;
+    /* Soft Green focus */
+    --btn-cancel-bg: #2a2a3c;
+    --btn-cancel-hover: #36364d;
+    --btn-delete-bg: rgba(239, 68, 68, 0.15);
+    --btn-delete-hover: rgba(239, 68, 68, 0.25);
+    --backdrop: rgba(0, 0, 0, 0.75);
+    --accent: #5c6285;
+    /* Soft Mint/Sage Green Theme */
+    --glow-1: rgba(168, 213, 186, 0.65);
+    /* Much stronger for Dark Mode */
+    --glow-2: rgba(100, 160, 255, 0.65);
+    --canvas-opacity: 0.75;
   }
 }
 
-.dark-mode {
-  color-scheme: dark;
-  --bg: #0c0c14;
-  --surface: rgba(255, 255, 255, 0.03);
-  --border: rgba(255, 255, 255, 0.05);
-  --text: rgba(255, 255, 255, 0.85);
-  --text-muted: rgba(255, 255, 255, 0.35);
-  --color-none: hsl(220, 10%, 20%);
-  --color-done: hsl(220, 8%, 15%);
-  --input-bg: rgba(255, 255, 255, 0.04);
-  --input-focus-bg: rgba(255, 255, 255, 0.07);
-  --input-focus-border: rgba(255, 255, 255, 0.15);
-  --btn-cancel-bg: rgba(255, 255, 255, 0.05);
-  --btn-cancel-hover: rgba(255, 255, 255, 0.1);
-  --btn-delete-bg: rgba(239, 68, 68, 0.1);
-  --btn-delete-hover: rgba(239, 68, 68, 0.2);
-  --backdrop: rgba(12, 12, 20, 0.8);
-  --accent: rgba(255, 255, 255, 0.7);
-  --glow-1: rgba(120, 180, 255, 0.08);
-  --glow-2: rgba(255, 120, 160, 0.08);
+
+html {
+  background: var(--bg);
+  /* Background color moved here */
 }
 
-html,
 body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: transparent;
+  /* Body must be transparent for z-index -1 to show */
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text);
   position: relative
@@ -93,23 +85,38 @@ body::before,
 body::after {
   content: "";
   position: absolute;
+  display: block;
   width: 100vmax;
   height: 100vmax;
   border-radius: 50%;
-  filter: blur(120px);
-  z-index: -1;
+  filter: blur(50px);
+  /* Softer glow */
+  z-index: 0;
   pointer-events: none;
   opacity: 1;
+  animation: glow-breathe 15s ease-in-out infinite alternate;
+}
+
+@keyframes glow-breathe {
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(1.1) translate(20px, 20px);
+    opacity: 0.9;
+  }
 }
 
 body::before {
-  top: -20%;
+  top: -10%;
   left: -20%;
   background: radial-gradient(circle, var(--glow-1) 0%, transparent 70%);
 }
 
 body::after {
-  bottom: -20%;
+  bottom: -10%;
   right: -20%;
   background: radial-gradient(circle, var(--glow-2) 0%, transparent 70%);
 }
@@ -157,7 +164,7 @@ body::after {
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: var(--text);
+  background: var(--accent);
   color: #fff;
   font-size: 2rem;
   line-height: 1;
@@ -165,13 +172,44 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   transition: transform .15s, box-shadow .2s;
 }
 
 #add-btn:hover {
   transform: scale(1.08);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2)
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3)
+}
+
+#history-btn {
+  position: fixed;
+  bottom: 32px;
+  left: 104px;
+  z-index: 100;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: transform .15s, background .2s;
+}
+
+#history-btn:hover {
+  transform: scale(1.08);
+  background: var(--input-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  #add-btn {
+    color: #0c0c14;
+    /* Dark text on light green accent */
+  }
 }
 
 /* Canvas */
@@ -180,6 +218,12 @@ body::after {
   inset: 0;
   top: 0;
   overflow: hidden;
+  filter: url('#goo');
+  /* GPU Acceleration to handle heavy SVG filter */
+  transform: translateZ(0);
+  will-change: transform, filter;
+  pointer-events: none;
+  opacity: var(--canvas-opacity);
 }
 
 /* Empty state */
@@ -210,7 +254,7 @@ body::after {
   justify-content: center;
   padding: 40px;
   gap: 16px;
-  box-shadow: inset -5px -5px 15px rgba(0,0,0,0.05), 0 10px 32px rgba(0,0,0,0.08);
+  box-shadow: inset -5px -5px 15px rgba(0, 0, 0, 0.05), 0 10px 32px rgba(0, 0, 0, 0.08);
   pointer-events: auto;
   animation: float 6s ease-in-out infinite;
 }
@@ -235,7 +279,7 @@ body::after {
   padding: 12px 28px;
   border-radius: 999px;
   border: none;
-  background: var(--text);
+  background: var(--accent);
   color: #fff;
   font-size: .95rem;
   font-weight: 500;
@@ -255,53 +299,37 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* 讓事件穿透到內層 */
-  transition: left .6s cubic-bezier(0.2, 0.8, 0.2, 1), top .6s cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* 緩慢的漂浮位移感 */
-  animation: float-motion var(--float-dur, 10s) ease-in-out var(--float-delay, 0s) infinite alternate;
-}
-
-@keyframes float-motion {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(12px, -18px); }
-  100% { transform: translate(-8px, 10px); }
+  pointer-events: none;
+  /* Remove transition and old animation as PhysicsEngine will handle movement */
+  will-change: transform;
 }
 
 .blob {
-  position: relative; /* 改為 relative */
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
-  pointer-events: auto; /* 重新開啟事件 */
-  border-radius: var(--shape);
-  background: var(--blobColor);
-  box-shadow: inset -5px -5px 15px rgba(0, 0, 0, 0.1), 0 10px 24px rgba(0, 0, 0, 0.12);
-  transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter .2s ease, opacity .4s ease;
-  padding: 12px;
-  perspective: 1000px;
-  transform-style: preserve-3d;
-  /* 大幅增強 3D 傾斜與視差感 */
-  transform: 
-    rotateY(calc(var(--mx, 0) * 25deg)) 
-    rotateX(calc(var(--my, 0) * -25deg))
-    scale(calc(1 + (abs(var(--mx, 0)) + abs(var(--my, 0))) * 0.05));
+  pointer-events: auto;
+  border-radius: 50%;
+  background: transparent;
+  transition: opacity .4s ease;
+  padding: 20px;
+  text-align: center;
 }
 
 .blob:hover {
   filter: brightness(1.1);
-  /* Hover 時疊加明顯的內發光與強投影 */
-  box-shadow: 
-    inset 5px 5px 20px rgba(255, 255, 255, 0.4),
-    inset -5px -5px 15px rgba(0, 0, 0, 0.1), 
-    0 20px 45px rgba(0, 0, 0, 0.2);
 }
 
 .blob.done {
-  background: var(--color-done) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  background: transparent !important;
+  box-shadow: none;
   opacity: .85
 }
 
@@ -329,17 +357,18 @@ body::after {
 }
 
 .blob-hint {
-  font-size: clamp(.55rem, 1.1vw, .75rem);
-  color: rgba(255, 255, 255, .8);
+  font-size: clamp(.6rem, 1.2vw, .8rem);
+  color: rgba(255, 255, 255, .7);
   margin-top: 6px;
   text-align: center;
   pointer-events: none;
-  max-width: 90%;
-  font-weight: 500;
-  white-space: nowrap;
+  max-width: 85%;
+  font-weight: 400;
   overflow: hidden;
-  text-overflow: ellipsis;
-  /* 視差感 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
   transform: translateZ(25px);
 }
 
@@ -348,14 +377,14 @@ body::after {
 }
 
 .blob-check {
-  margin-top: 8px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, .45);
+  margin-top: 12px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1.2px solid rgba(255, 255, 255, .4);
   background: transparent;
   color: rgba(255, 255, 255, .9);
-  font-size: 1.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -395,25 +424,21 @@ body::after {
 
 @keyframes pop-burst {
   0% {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
-    filter: brightness(1) blur(0);
+    filter: blur(0);
   }
-  15% {
-    transform: scale(0.8);
-    opacity: 1;
-    filter: brightness(1.2);
+
+  40% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 0.7;
+    filter: blur(8px);
   }
-  45% {
-    transform: scale(2.2);
-    opacity: 1;
-    filter: brightness(3) blur(2px);
-    box-shadow: 0 0 50px #fff;
-  }
+
   100% {
-    transform: scale(0.1);
+    transform: translate(-50%, -50%) scale(2.2);
     opacity: 0;
-    filter: brightness(5) blur(12px);
+    filter: blur(30px);
   }
 }
 
@@ -431,17 +456,19 @@ dialog {
   margin: 0;
   border: none;
   border-radius: 24px;
-  background: var(--surface);
+  background-color: var(--surface) !important;
+  /* Force opaque */
   color: var(--text);
   padding: 32px;
-  width: min(400px, 92vw);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, .12);
+  width: min(450px, 92vw);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   outline: none;
+  opacity: 1 !important;
 }
 
 dialog::backdrop {
   background: var(--backdrop);
-  backdrop-filter: blur(6px)
+  /* Removed backdrop-filter to prevent severe lag with SVG Gooey canvas */
 }
 
 dialog h2 {
@@ -461,7 +488,10 @@ dialog h2 {
 .field label {
   font-size: .85rem;
   color: var(--text-muted);
-  font-weight: 600
+  font-weight: 600;
+  display: flex;
+  align-content: center;
+  gap: 4px;
 }
 
 .field input[type=text],
@@ -508,9 +538,12 @@ dialog h2 {
 .field-error {
   font-size: .8rem;
   color: #ef4444;
-  min-height: 16px;
-  margin-top: -4px;
+  margin-top: 4px;
   font-weight: 500
+}
+
+.field-error:empty {
+  display: none;
 }
 
 .modal-actions {
@@ -551,8 +584,10 @@ dialog h2 {
 }
 
 #btn-submit {
-  background: var(--text);
-  color: #fff
+  background: var(--accent);
+  color: #fff;
+  /* Default for light mode */
+  font-weight: 700;
 }
 
 #btn-submit:hover {
@@ -572,4 +607,19 @@ dialog h2 {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, .15);
   border-radius: 4px
+}
+
+.quota-warning {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff4d4f;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
 }

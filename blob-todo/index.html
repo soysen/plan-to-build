@@ -10,9 +10,18 @@
 </head>
 <body>
 <nav id="breadcrumb" aria-label="導航"></nav>
+<div id="quota-warning" class="quota-warning" hidden>同步空間即將額滿，請刪除已完成或不需要的任務以繼續跨裝置同步</div>
 <button id="add-btn" aria-label="新增任務">＋</button>
-<main id="blob-canvas">
-</main>
+<canvas id="blob-canvas"></canvas>
+<!-- SVG Filter for Gooey effect -->
+<svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+    <filter id="goo">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" result="goo" />
+    </filter>
+  </defs>
+</svg>
 <div id="empty-state" hidden>
     <div id="empty-state-bubble">
       <h2>今天有什麼要做的？</h2>
@@ -37,6 +46,10 @@
       <label for="f-deadline">截止日期（選填）</label>
       <input id="f-deadline" type="date">
     </div>
+    <div class="field">
+      <label for="f-notes">註記（選填）</label>
+      <textarea id="f-notes" rows="3" placeholder="輸入任務細節..." style="width:100%; border-radius:12px; border:2px solid var(--input-bg); padding:12px; background:var(--input-bg); color:var(--text); font-family:inherit; outline:none;"></textarea>
+    </div>
     <div class="modal-actions">
       <button type="button" id="btn-delete" hidden>刪除</button>
       <button type="button" id="btn-cancel">取消</button>
@@ -44,6 +57,27 @@
     </div>
   </form>
 </dialog>
+
+<dialog id="history-modal" aria-modal="true">
+  <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h2>歷史記錄</h2>
+    <button type="button" id="btn-history-close" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text);">✕</button>
+  </div>
+  <div id="history-list" style="max-height:400px; overflow-y:auto; margin-bottom:20px;">
+    <!-- History items go here -->
+  </div>
+  <div class="modal-actions">
+    <button type="button" id="btn-history-clear" class="btn-danger">清空歷史</button>
+    <button type="button" id="btn-history-done">關閉</button>
+  </div>
+</dialog>
+
+<button id="history-btn" aria-label="查看歷史記錄">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <polyline points="12 6 12 12 16 14"></polyline>
+  </svg>
+</button>
 <script src="app.js"></script>
 </body>
 </html>
