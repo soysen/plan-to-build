@@ -90,13 +90,21 @@ const TaskStore = (() => {
   let tasks = [];
   
   const load = async () => {
-    // try chrome storage
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    // try chrome storage sync
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
       return new Promise(resolve => {
-        chrome.storage.local.get([KEY], result => {
-          tasks = result[KEY] || [];
-          if (!Array.isArray(tasks)) tasks = [];
-          resolve();
+        chrome.storage.sync.get(['blob-todo-meta-tasks'], result => {
+          const meta = result['blob-todo-meta-tasks'] || [];
+          if (!Array.isArray(meta) || meta.length === 0) {
+            tasks = [];
+            resolve();
+            return;
+          }
+          const keysToFetch = meta.map(id => `blob-todo-task-${id}`);
+          chrome.storage.sync.get(keysToFetch, taskResults => {
+            tasks = meta.map(id => taskResults[`blob-todo-task-${id}`]).filter(Boolean);
+            resolve();
+          });
         });
       });
     } else {
@@ -108,8 +116,13 @@ const TaskStore = (() => {
   };
   
   const save = () => {
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ [KEY]: tasks });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      const meta = tasks.map(t => t.id);
+      const dataToSave = { 'blob-todo-meta-tasks': meta };
+      tasks.forEach(t => {
+        dataToSave[`blob-todo-task-${t.id}`] = t;
+      });
+      chrome.storage.sync.set(dataToSave);
     } else {
       localStorage.setItem(KEY, JSON.stringify(tasks));
     }
@@ -127,9 +140,14 @@ const TaskStore = (() => {
       return c.length ? c.sort((a,b) => a.createdAt > b.createdAt ? -1 : 1)[0].title : null;
     },
     add(data) {
-      const hue = HUES[tasks.filter(t=>!t.parentId).length % HUES.length];
+      // Golden ratio based hue distribution for better variety
+      const goldenRatioConjugate = 0.618033988749895;
+      let hueSeed = tasks.filter(t => !t.parentId).length;
+      const hue = (Math.random() * 360 + hueSeed * goldenRatioConjugate * 360) % 360;
+      
       const t = {
         id: crypto.randomUUID(), title: data.title.trim(),
+        notes: data.notes || '',
         weight: data.weight ?? 3, deadline: data.deadline || null,
         done: false, blobShapeId: Math.floor(Math.random() * SHAPES.length),
         colorHue: data.parentId ? null : hue,
@@ -138,213 +156,297 @@ const TaskStore = (() => {
       };
       tasks.push(t); save(); EventBus.emit('tasks:changed'); return t;
     },
+    delete(id) {
+      const toDelete = tasks.find(t => t.id === id);
+      if (toDelete) {
+        const history = JSON.parse(localStorage.getItem('blob_todo_history') || '[]');
+        history.unshift({ ...toDelete, deletedAt: new Date().toISOString() });
+        localStorage.setItem('blob_todo_history', JSON.stringify(history.slice(0, 50))); // Keep last 50
+      }
+      const childrenIds = tasks.filter(t => t.parentId === id).map(t => t.id);
+      tasks = tasks.filter(t => t.id !== id && t.parentId !== id);
+      
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        const keysToRemove = [`blob-todo-task-${id}`, ...childrenIds.map(cid => `blob-todo-task-${cid}`)];
+        chrome.storage.sync.remove(keysToRemove);
+      }
+      
+      save(); EventBus.emit('tasks:changed');
+    },
     update(id, partial) {
       const i = tasks.findIndex(t => t.id === id);
       if (i < 0) return;
       tasks[i] = { ...tasks[i], ...partial, updatedAt: new Date().toISOString() };
       save(); EventBus.emit('tasks:changed'); return tasks[i];
     },
-    delete(id) {
-      tasks = tasks.filter(t => t.id !== id && t.parentId !== id);
-      save(); EventBus.emit('tasks:changed');
+    toggleDone(id) { return this.update(id, { done: !this.getById(id)?.done }); },
+    getDeleted() { return JSON.parse(localStorage.getItem('blob_todo_history') || '[]'); },
+    restore(id) {
+      const history = this.getDeleted();
+      const task = history.find(t => t.id === id);
+      if (task) {
+        // Reset state to uncompleted upon restoration
+        const restoredTask = { 
+          ...task, 
+          done: false, 
+          updatedAt: new Date().toISOString() 
+        };
+        tasks.push(restoredTask);
+        localStorage.setItem('blob_todo_history', JSON.stringify(history.filter(t => t.id !== id)));
+        save(); EventBus.emit('tasks:changed');
+      }
     },
-    toggleDone(id) { return this.update(id, { done: !this.getById(id)?.done }); }
+    clearHistory() {
+      localStorage.setItem('blob_todo_history', '[]');
+      EventBus.emit('tasks:changed');
+    }
   };
 })();
 
-// ── MOD-003 LayoutEngine ──────────────────────────────────────────
-const LayoutEngine = {
-  calculate(items, vw, vh) {
-    if (!items.length) return [];
-    const pad = 20, n = items.length;
-    const totalArea = vw * vh * 0.55;
-    const avgR = Math.sqrt(totalArea / (n * Math.PI));
-    const baseR = Math.min(avgR, Math.min(vw, vh) * 0.22);
-    const blobs = items.map(t => ({
-      id: t.id,
-      // 有效 weight = 原始 weight + urgency bonus（deadline 越近加越多，上限 +1.5）
-      r: Math.max(44, baseR * Math.sqrt(((t.weight || 3) + ColorEngine.getUrgencyBonus(t.deadline)) / 3))
-    }));
+// ── MOD-003 PhysicsEngine (Spring-Physics) ───────────────────────
+const PhysicsEngine = (() => {
+  let blobs = [];
+  const DAMPING = 0.95;    // Balanced fluid feel
+  const DRIFT = 0.025;     // Stronger drift
+  const ITERATIONS = 5;
+  
+  return {
+    sync(tasks, vw, vh) {
+      const activeIds = tasks.map(t => t.id);
+      blobs = blobs.filter(b => activeIds.includes(b.id));
+      
+      const baseR = Math.min(vw, vh) * 0.07;
+      
+      tasks.forEach(task => {
+        const existing = blobs.find(b => b.id === task.id);
+        const r = baseR * Math.sqrt(Math.pow(task.weight || 3, 1.7));
+        
+        if (!existing) {
+          // Add new blob
+          blobs.push({
+            id: task.id,
+            x: vw / 2, y: vh / 2,
+            vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+            ax: 0, ay: 0,
+            r: r, targetR: r,
+            color: ColorEngine.getColor(task.deadline, task.colorHue),
+            done: task.done,
+            compression: 0,
+            popProgress: 0, // 0 to 1 for pop animation
+            isPopping: false,
+            // Individual movement seeds
+            wanderAngle: Math.random() * Math.PI * 2,
+            wanderSpeed: 0.005 + Math.random() * 0.02,
+            points: Array.from({length: 8}, (_, i) => ({
+              angle: (i / 8) * Math.PI * 2,
+              offset: 0,
+              v: 0
+            }))
+          });
+        } else {
+          // Update existing blob state
+          existing.targetR = r;
+          existing.done = task.done;
+          existing.color = ColorEngine.getColor(task.deadline, task.colorHue);
+        }
+      });
+    },
+    update(vw, vh, mousePos) {
+      // 1. Update Positions (Smooth Linear Flow)
+      const time = Date.now() * 0.0005;
+      blobs.forEach((b, i) => {
+        // Individualized organic drift
+        b.wanderAngle += b.wanderSpeed;
+        b.vx += Math.cos(b.wanderAngle) * DRIFT;
+        b.vy += Math.sin(b.wanderAngle) * DRIFT;
+        
+        // Add a tiny bit of random jitter for extra slime feel
+        b.vx += (Math.random() - 0.5) * 0.01;
+        b.vy += (Math.random() - 0.5) * 0.01;
+        
+        b.x += b.vx; b.y += b.vy;
+        b.vx *= DAMPING; b.vy *= DAMPING;
+      });
 
-    // 若視窗太小導致泡泡總面積太大會造成重疊，則依比例縮小（擠壓效果）
-    const maxAllowedArea = (vw - pad * 2) * (vh - pad * 2) * 0.65;
-    const currentTotalArea = blobs.reduce((sum, b) => sum + Math.PI * b.r * b.r, 0);
-    if (currentTotalArea > maxAllowedArea) {
-      const scaleFactor = Math.sqrt(maxAllowedArea / currentTotalArea);
-      blobs.forEach(b => b.r *= scaleFactor);
-    }
-    // Fibonacci spiral placement
-    const golden = Math.PI * (3 - Math.sqrt(5));
-    blobs.forEach((b, i) => {
-      const angle = i * golden;
-      const radius = Math.sqrt(i / n) * Math.min(vw, vh) * 0.38;
-      b.x = vw / 2 + radius * Math.cos(angle);
-      b.y = vh / 2 + radius * Math.sin(angle);
-    });
-    // Repulsion iterations
-    for (let iter = 0; iter < 60; iter++) {
-      for (let a = 0; a < blobs.length; a++) {
-        for (let b2 = a + 1; b2 < blobs.length; b2++) {
-          const A = blobs[a], B = blobs[b2];
-          const dx = B.x - A.x, dy = B.y - A.y;
-          const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-          const minD = A.r + B.r + 8;
-          if (dist < minD) {
-            const push = (minD - dist) / 2;
-            const nx = dx / dist, ny = dy / dist;
-            A.x -= nx * push; A.y -= ny * push;
-            B.x += nx * push; B.y += ny * push;
+      // 2. Verlet Relaxation (Constraint Resolution)
+      for (let step = 0; step < ITERATIONS; step++) {
+        for (let i = 0; i < blobs.length; i++) {
+          for (let j = i + 1; j < blobs.length; j++) {
+            const b1 = blobs[i], b2 = blobs[j];
+            const dx = b2.x - b1.x, dy = b2.y - b1.y;
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            const minDist = b1.r + b2.r + 15;
+            
+            if (dist < minDist) {
+              const overlap = (minDist - dist);
+              const nx = dx / dist, ny = dy / dist;
+              const push = overlap * 0.5;
+              b1.x -= nx * push; b1.y -= ny * push;
+              b2.x += nx * push; b2.y += ny * push;
+              
+              const dot = (b1.vx - b2.vx) * nx + (b1.vy - b2.vy) * ny;
+              b1.vx -= nx * dot * 0.2; b1.vy -= ny * dot * 0.2;
+              b2.vx += nx * dot * 0.2; b2.vy += ny * dot * 0.2;
+
+              // Deform vertices at collision angle
+              const angle1 = Math.atan2(ny, nx);
+              const angle2 = Math.atan2(-ny, -nx);
+              b1.points.forEach(p => {
+                const diff = Math.abs(Math.atan2(Math.sin(p.angle - angle1), Math.cos(p.angle - angle1)));
+                if (diff < Math.PI / 3) p.v -= (Math.PI/3 - diff) * overlap * 0.2;
+              });
+              b2.points.forEach(p => {
+                const diff = Math.abs(Math.atan2(Math.sin(p.angle - angle2), Math.cos(p.angle - angle2)));
+                if (diff < Math.PI / 3) p.v -= (Math.PI/3 - diff) * overlap * 0.2;
+              });
+            }
           }
         }
         
-        // Boundary
-        const bl = blobs[a];
-        bl.x = Math.max(bl.r + pad, Math.min(vw - bl.r - pad, bl.x));
-        bl.y = Math.max(bl.r + pad, Math.min(vh - bl.r - pad, bl.y));
+        // Boundaries with Bounce
+        blobs.forEach(b => {
+          const pad = 25;
+          if (b.x < b.r + pad) { b.x = b.r + pad; b.vx *= -1; }
+          if (b.x > vw - b.r - pad) { b.x = vw - b.r - pad; b.vx *= -1; }
+          if (b.y < b.r + pad) { b.y = b.r + pad; b.vy *= -1; }
+          if (b.y > vh - b.r - pad) { b.y = vh - b.r - pad; b.vy *= -1; }
+        });
       }
-    }
-    return blobs;
+
+      // 3. Update Vertex Elasticity (Deep Slime Wobble)
+      const wobbleTime = Date.now() * 0.0006; // Slower, more organic
+      blobs.forEach((b, i) => {
+        if (b.isPopping) {
+          b.popProgress += 0.05;
+          b.r *= 1.05; // Rapid expansion
+          if (b.popProgress > 1) b.popProgress = 1;
+        }
+
+        b.points.forEach((p, pi) => {
+          // Deep organic deformation: multiple waves combined
+          const wave1 = Math.sin(wobbleTime * 1.5 + i + pi) * (b.r * 0.15);
+          const wave2 = Math.cos(wobbleTime * 0.8 + i * 0.5 + pi * 2) * (b.r * 0.1);
+          const naturalWobble = wave1 + wave2;
+          
+          const spring = (-p.offset + naturalWobble) * 0.05;
+          p.v += spring;
+          p.v *= 0.8; // High damping for heavy slime
+          p.offset += p.v;
+        });
+      });
+    },
+    getBlobs() { return blobs; }
+  };
+})();
+
+// ── MOD-004 CanvasRenderer ────────────────────────────────────────
+const CanvasRenderer = {
+  render(ctx, blobs) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    const time = Date.now() * 0.0005;
+    blobs.forEach((b, i) => {
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      
+      const baseColor = b.color.replace('hsla(', '').replace(')', '').split(',');
+      // Draw with full opacity inside Canvas so the Gooey filter works correctly
+      const alpha = b.isPopping ? (1 - b.popProgress) : 1;
+      const fillColor = b.done ? `hsla(220, 10%, 92%, ${alpha})` : `hsla(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${alpha})`;
+      ctx.fillStyle = fillColor;
+      
+      if (b.isPopping) {
+        ctx.filter = `blur(${b.popProgress * 20}px)`; // Dissolve effect
+      }
+      
+      // Draw smooth path through vertices
+      const pts = b.points.map(p => ({
+        x: (b.r + p.offset) * Math.cos(p.angle),
+        y: (b.r + p.offset) * Math.sin(p.angle)
+      }));
+
+      ctx.beginPath();
+      ctx.moveTo((pts[0].x + pts[pts.length-1].x)/2, (pts[0].y + pts[pts.length-1].y)/2);
+      
+      for(let j=0; j<pts.length; j++) {
+        const p1 = pts[j];
+        const p2 = pts[(j+1) % pts.length];
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+        ctx.quadraticCurveTo(p1.x, p1.y, midX, midY);
+      }
+      
+      ctx.fill();
+      ctx.restore();
+    });
   }
 };
 
-// ── MOD-004 BlobRenderer ──────────────────────────────────────────
-const BlobRenderer = {
-  render(tasks, canvas, vw, vh) {
-    const layouts = LayoutEngine.calculate(tasks, vw, vh);
+// ── MOD-005 DOMOverlay ───────────────────────────────────────────
+const DOMOverlay = {
+  sync(tasks, blobs, container) {
     // Remove stale
-    canvas.querySelectorAll('.blob-wrapper').forEach(el => {
+    container.querySelectorAll('.blob-wrapper').forEach(el => {
       if (!tasks.find(t => t.id === el.dataset.id)) el.remove();
     });
-    
+
     tasks.forEach(task => {
-      const L = layouts.find(l => l.id === task.id);
-      if (!L) return;
-      let wrapper = canvas.querySelector(`.blob-wrapper[data-id="${task.id}"]`);
-      let el;
+      const b = blobs.find(blob => blob.id === task.id);
+      if (!b) return;
+
+      let wrapper = container.querySelector(`.blob-wrapper[data-id="${task.id}"]`);
       if (!wrapper) {
         wrapper = document.createElement('div');
-        wrapper.className = 'blob-wrapper'; wrapper.dataset.id = task.id;
-        el = document.createElement('div');
-        el.className = 'blob';
-        el.innerHTML = `
-          <span class="blob-done-mark">✓</span>
-          <span class="blob-title"></span>
-          <span class="blob-hint"></span>
-          <button class="blob-check" aria-label="標記完成">✓</button>`;
-        wrapper.appendChild(el);
-        canvas.appendChild(wrapper);
+        wrapper.className = 'blob-wrapper';
+        wrapper.dataset.id = task.id;
+        wrapper.innerHTML = `
+          <div class="blob">
+            <span class="blob-done-mark">做完了</span>
+            <span class="blob-title"></span>
+            <span class="blob-hint"></span>
+            <button class="blob-check" aria-label="標記完成">做完了</button>
+          </div>`;
+        container.appendChild(wrapper);
         
-        let startX = 0, startY = 0, isDragging = false;
-        
-        el.addEventListener('pointerdown', e => {
-          if (e.target.closest('.blob-check')) return;
-          isDragging = false;
-          startX = e.clientX; startY = e.clientY;
-          el.setPointerCapture(e.pointerId);
-          wrapper.style.zIndex = 1000;
-          wrapper.style.transition = 'none';
-        });
-
-        el.addEventListener('pointermove', e => {
-          if (el.hasPointerCapture(e.pointerId)) {
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            if (dx*dx + dy*dy > 25) isDragging = true;
-            if (isDragging) {
-              const currentLeft = parseFloat(wrapper.style.left);
-              const currentTop = parseFloat(wrapper.style.top);
-              wrapper.style.left = `${currentLeft + e.movementX}px`;
-              wrapper.style.top = `${currentTop + e.movementY}px`;
-            }
-          }
-        });
-
-        el.addEventListener('pointerup', e => {
-          if (el.hasPointerCapture(e.pointerId)) {
-            el.releasePointerCapture(e.pointerId);
-            wrapper.style.zIndex = '';
-            wrapper.style.transition = '';
-          }
-        });
-
-        // 邊緣變形互動
-        el.addEventListener('mousemove', e => {
-          const rect = el.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          const px = (e.clientX - centerX) / (rect.width / 2);
-          const py = (e.clientY - centerY) / (rect.height / 2);
-          el.style.setProperty('--mx', px.toFixed(2));
-          el.style.setProperty('--my', py.toFixed(2));
-        });
-
-        el.addEventListener('mouseleave', () => {
-          el.style.setProperty('--mx', '0');
-          el.style.setProperty('--my', '0');
-        });
-
+        const el = wrapper.querySelector('.blob');
         el.addEventListener('click', e => {
-          if (isDragging || e.target.closest('.blob-check')) return;
+          if (e.target.closest('.blob-check')) return;
           const t = TaskStore.getById(task.id);
           if (t.done) {
-            // 停止所有動態效果，確保破裂動畫可見
-            wrapper.style.animation = 'none';
-            el.style.animation = 'none';
             el.classList.add('popping');
-            setTimeout(() => TaskStore.delete(task.id), 300);
-            return;
+            const b = PhysicsEngine.getBlobs().find(bl => bl.id === task.id);
+            if (b) b.isPopping = true;
+            setTimeout(() => TaskStore.delete(task.id), 400);
+          } else {
+            const children = TaskStore.getChildren(task.id);
+            if (children.length) SubtaskView.enter(t);
+            else ModalManager.openEdit(task.id);
           }
-          const children = TaskStore.getChildren(task.id);
-          if (children.length) SubtaskView.enter(t);
-          else ModalManager.openEdit(task.id);
         });
-        
         el.querySelector('.blob-check').addEventListener('click', e => {
           e.stopPropagation(); TaskStore.toggleDone(task.id);
         });
-        el.addEventListener('contextmenu', e => { e.preventDefault(); ModalManager.openEdit(task.id); });
-      } else {
-        el = wrapper.querySelector('.blob');
       }
 
-      const color = task.done ? null : ColorEngine.getColor(task.deadline, task.colorHue);
-      const fontSize = task.weight || 1;
-      
-      // Extract numeric shape ID or use a hash of the task ID as fallback for existing tasks
-      let shapeId = task.blobShapeId;
-      if (typeof shapeId !== 'number') {
-        const hash = String(task.id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        shapeId = hash % 20;
-      } else {
-        shapeId = shapeId % 20;
-      }
-      
-      const shapeStr = SHAPES[shapeId % SHAPES.length];
-      const duration = 8 + (shapeId % 6);
-      const delay = -(shapeId * 3.1);
-      
-      // Wrapper 處理位置與慢速漂浮
-      wrapper.style.left = `${L.x - L.r}px`;
-      wrapper.style.top = `${L.y - L.r}px`;
-      wrapper.style.width = `${L.r*2}px`;
-      wrapper.style.height = `${L.r*2}px`;
-      wrapper.style.setProperty('--float-dur', `${10 + (shapeId % 5) * 2}s`);
-      wrapper.style.setProperty('--float-delay', `${-(shapeId * 1.5)}s`);
-
-      // Inner element 處理形狀與 3D 互動
-      el.style.cssText = `
-        width: 100%; height: 100%;
-        font-size:${fontSize}rem;
-        --shape:${shapeStr};
-        animation: wobble-${shapeId} ${duration}s ease-in-out ${delay}s infinite alternate;
-        ${color ? `--blobColor:${color};` : ''}
-      `;
-      el.classList.toggle('done', task.done);
-      el.querySelector('.blob-title').textContent = task.title;
-      const hint = TaskStore.getNextHint(task.id);
+      const el = wrapper.querySelector('.blob');
+      const titleEl = el.querySelector('.blob-title');
       const hintEl = el.querySelector('.blob-hint');
-      hintEl.textContent = hint ? `▸ ${hint}` : '';
-      hintEl.hidden = !hint;
+      
+      wrapper.style.transform = `translate(${b.x}px, ${b.y}px)`;
+      
+      // Dynamic Font Size based on Bubble Radius (Scaled down for Level 1/2)
+      const baseSize = b.r / 68; 
+      el.style.fontSize = `${baseSize}rem`;
+      
+      el.style.width = `${b.r * 2}px`;
+      el.style.height = `${b.r * 2}px`;
+      // No more left/top/margin - centered via CSS transform
+      
+      el.classList.toggle('done', task.done);
+      titleEl.textContent = task.title;
+      const notes = task.notes ? task.notes.trim() : '';
+      hintEl.textContent = notes;
+      hintEl.hidden = !notes;
     });
   }
 };
@@ -354,6 +456,7 @@ const ModalManager = (() => {
   const dialog = document.getElementById('task-modal');
   const title  = document.getElementById('modal-title');
   const fTitle = document.getElementById('f-title');
+  const fNotes = document.getElementById('f-notes');
   const fWeight= document.getElementById('f-weight');
   const fDeadline = document.getElementById('f-deadline');
   const wDisp  = document.getElementById('weight-display');
@@ -366,7 +469,14 @@ const ModalManager = (() => {
   document.getElementById('btn-cancel').addEventListener('click', () => close());
   dialog.addEventListener('close', () => reset());
 
-  function reset() { fTitle.value=''; fWeight.value=3; wDisp.textContent='3'; fDeadline.value=''; errEl.textContent=''; }
+  function reset() { 
+    fTitle.value=''; 
+    fNotes.value='';
+    fWeight.value=3; 
+    wDisp.textContent='3'; 
+    fDeadline.value=''; 
+    errEl.textContent=''; 
+  }
   function close() { dialog.close(); reset(); }
 
   document.getElementById('task-form').addEventListener('submit', e => {
@@ -374,8 +484,15 @@ const ModalManager = (() => {
     const t = fTitle.value.trim();
     if (!t) { errEl.textContent = '請輸入任務名稱'; fTitle.focus(); return; }
     errEl.textContent = '';
-    if (mode === 'add') TaskStore.add({ title: t, weight: +fWeight.value, deadline: fDeadline.value || null, parentId });
-    else TaskStore.update(editId, { title: t, weight: +fWeight.value, deadline: fDeadline.value || null });
+    const data = { 
+      title: t, 
+      notes: fNotes.value.trim(),
+      weight: +fWeight.value, 
+      deadline: fDeadline.value || null, 
+      parentId 
+    };
+    if (mode === 'add') TaskStore.add(data);
+    else TaskStore.update(editId, data);
     close();
   });
 
@@ -395,7 +512,10 @@ const ModalManager = (() => {
       const task = TaskStore.getById(id); if (!task) return;
       mode = 'edit'; editId = id; parentId = null;
       title.textContent = '編輯任務';
-      fTitle.value = task.title; fWeight.value = task.weight; wDisp.textContent = task.weight;
+      fTitle.value = task.title; 
+      fNotes.value = task.notes || '';
+      fWeight.value = task.weight; 
+      wDisp.textContent = task.weight;
       fDeadline.value = task.deadline || '';
       btnDel.hidden = false; btnSub.textContent = '儲存';
       dialog.showModal(); fTitle.focus();
@@ -430,20 +550,88 @@ const SubtaskView = (() => {
   };
 })();
 
+// ── MOD-007 HistoryManager ─────────────────────────────────────────
+const HistoryManager = (() => {
+  const modal = document.getElementById('history-modal');
+  const list = document.getElementById('history-list');
+  const btnOpen = document.getElementById('history-btn');
+  const btnClose = document.getElementById('btn-history-close');
+  const btnDone = document.getElementById('btn-history-done');
+  const btnClear = document.getElementById('btn-history-clear');
+
+  const render = () => {
+    const deleted = TaskStore.getDeleted();
+    if (deleted.length === 0) {
+      list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">歷史清單是空的</div>';
+      return;
+    }
+    list.innerHTML = deleted.map(t => `
+      <div class="history-item" style="padding:16px; border-bottom:1px solid var(--input-bg); display:flex; justify-content:space-between; align-items:center;">
+        <div style="flex:1;">
+          <div style="font-weight:600; color:var(--text);">${t.title}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">刪除於: ${new Date(t.deletedAt).toLocaleString()}</div>
+        </div>
+        <button class="btn-restore" data-id="${t.id}" style="padding:6px 12px; border-radius:8px; border:1px solid var(--accent); background:none; color:var(--accent); cursor:pointer;">恢復</button>
+      </div>
+    `).join('');
+  };
+
+  btnOpen.addEventListener('click', () => { render(); modal.showModal(); });
+  btnClose.addEventListener('click', () => modal.close());
+  btnDone.addEventListener('click', () => modal.close());
+  btnClear.addEventListener('click', () => { 
+    if(confirm('確定要清空所有歷史記錄嗎？')) { 
+      TaskStore.clearHistory(); 
+      render(); 
+    }
+  });
+
+  list.addEventListener('click', e => {
+    if (e.target.classList.contains('btn-restore')) {
+      TaskStore.restore(e.target.dataset.id);
+      render();
+    }
+  });
+
+  return { refresh: render };
+})();
+
 // ── Main App ──────────────────────────────────────────────────────
 const App = {
   canvas: document.getElementById('blob-canvas'),
+  ctx: document.getElementById('blob-canvas').getContext('2d'),
   emptyState: document.getElementById('empty-state'),
 
   refresh() {
     const parent = SubtaskView.getParent();
     const tasks = parent ? TaskStore.getChildren(parent.id) : TaskStore.getTopLevel();
-    const vw = this.canvas.clientWidth, vh = this.canvas.clientHeight;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    
     const isEmpty = tasks.length === 0;
     this.emptyState.hidden = !isEmpty;
     document.getElementById('add-btn').style.display = isEmpty ? 'none' : 'flex';
-    if (isEmpty) return;
-    BlobRenderer.render(tasks, this.canvas, vw, vh);
+    
+    // Sync physics engine with current tasks
+    PhysicsEngine.sync(tasks, vw, vh);
+  },
+
+  mousePos: null,
+
+  loop() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (this.canvas.width !== vw || this.canvas.height !== vh) {
+      this.canvas.width = vw; this.canvas.height = vh;
+    }
+
+    PhysicsEngine.update(vw, vh, this.mousePos);
+    const blobs = PhysicsEngine.getBlobs();
+    CanvasRenderer.render(this.ctx, blobs);
+    
+    const parent = SubtaskView.getParent();
+    const tasks = parent ? TaskStore.getChildren(parent.id) : TaskStore.getTopLevel();
+    DOMOverlay.sync(tasks, blobs, this.canvas.parentElement);
+    
+    requestAnimationFrame(() => this.loop());
   },
 
   async init() {
@@ -451,12 +639,9 @@ const App = {
     EventBus.on('tasks:changed', () => this.refresh());
     document.getElementById('empty-cta').addEventListener('click', () => ModalManager.openAdd());
     
-    let resizeTimer;
-    const ro = new ResizeObserver(() => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => this.refresh(), 100);
-    });
-    ro.observe(this.canvas);
+    window.addEventListener('resize', () => this.refresh());
+    window.addEventListener('mousemove', e => this.mousePos = { x: e.clientX, y: e.clientY });
+    window.addEventListener('mouseleave', () => this.mousePos = null);
     
     // 深色模式補強偵測
     const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -465,7 +650,14 @@ const App = {
     updateTheme();
 
     this.refresh();
+    this.loop();
   }
 };
 
-App.init();
+if (typeof document !== 'undefined' && document.getElementById('blob-canvas')) {
+  App.init();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { TaskStore, EventBus, App };
+}
