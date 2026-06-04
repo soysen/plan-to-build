@@ -37,54 +37,62 @@ HTMLCanvasElement.prototype.getContext = () => ({
   fill: jest.fn(),
   restore: jest.fn()
 });
+
+let syncStorage = {};
+global.chrome = {
+  storage: {
+    sync: {
+      get: jest.fn((keys, cb) => {
+        if (Array.isArray(keys)) {
+          const res = {};
+          keys.forEach(k => {
+            if (syncStorage[k] !== undefined) res[k] = syncStorage[k];
+          });
+          cb(res);
+        } else if (typeof keys === 'string') {
+          const res = {};
+          if (syncStorage[keys] !== undefined) res[keys] = syncStorage[keys];
+          cb(res);
+        } else if (keys === null) {
+          cb(syncStorage);
+        } else {
+          cb({});
+        }
+      }),
+      set: jest.fn((data, cb) => {
+        Object.assign(syncStorage, data);
+        if (cb) cb();
+      }),
+      remove: jest.fn((keys, cb) => {
+        if (Array.isArray(keys)) {
+          keys.forEach(k => delete syncStorage[k]);
+        } else {
+          delete syncStorage[keys];
+        }
+        if (cb) cb();
+      })
+    },
+    onChanged: {
+      addListener: jest.fn(fn => global.chrome.storage.onChanged.listeners.push(fn)),
+      listeners: [],
+      trigger(changes, namespace) {
+        this.listeners.forEach(fn => fn(changes, namespace));
+      }
+    },
+    local: {
+      get: jest.fn((keys, cb) => cb({})),
+      set: jest.fn((data, cb) => { if (cb) cb(); }),
+      remove: jest.fn((keys, cb) => { if (cb) cb(); })
+    }
+  }
+};
+
 const { TaskStore } = require('../app.js');
 
 describe('TaskStore - Chrome Sync Storage Split Keys', () => {
-  let syncStorage = {};
-
   beforeEach(async () => {
     syncStorage = {};
-
-    global.chrome = {
-      storage: {
-        sync: {
-          get: jest.fn((keys, cb) => {
-            if (Array.isArray(keys)) {
-              const res = {};
-              keys.forEach(k => {
-                if (syncStorage[k] !== undefined) res[k] = syncStorage[k];
-              });
-              cb(res);
-            } else if (typeof keys === 'string') {
-              const res = {};
-              if (syncStorage[keys] !== undefined) res[keys] = syncStorage[keys];
-              cb(res);
-            } else if (keys === null) {
-              cb(syncStorage);
-            } else {
-              cb({});
-            }
-          }),
-          set: jest.fn((data, cb) => {
-            Object.assign(syncStorage, data);
-            if (cb) cb();
-          }),
-          remove: jest.fn((keys, cb) => {
-            if (Array.isArray(keys)) {
-              keys.forEach(k => delete syncStorage[k]);
-            } else {
-              delete syncStorage[keys];
-            }
-            if (cb) cb();
-          })
-        },
-        local: {
-          get: jest.fn((keys, cb) => cb({})),
-          set: jest.fn((data, cb) => { if (cb) cb(); }),
-          remove: jest.fn((keys, cb) => { if (cb) cb(); })
-        }
-      }
-    };
+    jest.clearAllMocks();
 
     if (!global.crypto) global.crypto = {};
     global.crypto.randomUUID = () => 'test-id-' + Math.random().toString(36).substring(2, 9);
@@ -149,5 +157,33 @@ describe('TaskStore - Chrome Sync Storage Split Keys', () => {
     
     // Assert: should clear the legacy localStorage to avoid re-migration
     expect(localStorage.getItem('blob-todo-tasks')).toBeNull();
+  });
+
+  it('should reload tasks and emit event when chrome.storage.onChanged is triggered', async () => {
+    // Arrange: Event listener should be set up during init
+    await TaskStore.init();
+    
+    // Prepare external change
+    syncStorage['blob-todo-meta-tasks'] = ['ext-1'];
+    syncStorage['blob-todo-task-ext-1'] = { id: 'ext-1', title: 'External Task', weight: 10 };
+    
+    // Mock event listener
+    const onTasksChanged = jest.fn();
+    const { EventBus } = require('../app.js');
+    EventBus.on('tasks:changed', onTasksChanged);
+
+    // Act: Trigger onChanged
+    global.chrome.storage.onChanged.trigger({
+      'blob-todo-meta-tasks': { newValue: ['ext-1'] }
+    }, 'sync');
+
+    // Wait for async load to finish
+    await new Promise(r => setTimeout(r, 10));
+
+    // Assert: TaskStore should have new tasks and EventBus should emit
+    const tasks = TaskStore.getTopLevel();
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].title).toBe('External Task');
+    expect(onTasksChanged).toHaveBeenCalled();
   });
 });

@@ -144,6 +144,14 @@ const TaskStore = (() => {
   
   const rand = arr => arr[Math.floor(Math.random() * arr.length)];
   
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'sync') {
+        load().then(() => EventBus.emit('tasks:changed'));
+      }
+    });
+  }
+
   return {
     async init() { await load(); },
     getTopLevel()       { return tasks.filter(t => !t.parentId); },
