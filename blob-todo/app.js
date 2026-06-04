@@ -94,15 +94,29 @@ const TaskStore = (() => {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
       return new Promise(resolve => {
         chrome.storage.sync.get(['blob-todo-meta-tasks'], result => {
-          const meta = result['blob-todo-meta-tasks'] || [];
-          if (!Array.isArray(meta) || meta.length === 0) {
+          const meta = result['blob-todo-meta-tasks'];
+          if (meta === undefined) {
+            const oldDataRaw = localStorage.getItem(KEY);
+            if (oldDataRaw) {
+              try { tasks = JSON.parse(oldDataRaw); } catch { tasks = []; }
+              if (!Array.isArray(tasks)) tasks = [];
+              if (tasks.length > 0) {
+                save();
+                localStorage.removeItem(KEY);
+                resolve();
+                return;
+              }
+            }
+          }
+          const metaTasks = meta || [];
+          if (!Array.isArray(metaTasks) || metaTasks.length === 0) {
             tasks = [];
             resolve();
             return;
           }
-          const keysToFetch = meta.map(id => `blob-todo-task-${id}`);
+          const keysToFetch = metaTasks.map(id => `blob-todo-task-${id}`);
           chrome.storage.sync.get(keysToFetch, taskResults => {
-            tasks = meta.map(id => taskResults[`blob-todo-task-${id}`]).filter(Boolean);
+            tasks = metaTasks.map(id => taskResults[`blob-todo-task-${id}`]).filter(Boolean);
             resolve();
           });
         });

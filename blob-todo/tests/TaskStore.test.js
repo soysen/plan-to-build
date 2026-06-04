@@ -125,4 +125,29 @@ describe('TaskStore - Chrome Sync Storage Split Keys', () => {
     expect(tasks[0].title).toBe('Loaded Task');
     expect(tasks[0].weight).toBe(4);
   });
+
+  it('should migrate data from localStorage if sync is empty', async () => {
+    // Arrange: sync is empty (undefined)
+    delete syncStorage['blob-todo-meta-tasks'];
+    
+    // Arrange: localStorage has legacy data
+    const legacyTasks = [{ id: 'legacy-1', title: 'Legacy Task', weight: 5 }];
+    localStorage.setItem('blob-todo-tasks', JSON.stringify(legacyTasks));
+
+    // Act
+    await TaskStore.init();
+    const tasks = TaskStore.getTopLevel();
+
+    // Assert: should load the legacy task
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].title).toBe('Legacy Task');
+
+    // Assert: should have saved the legacy task to sync storage
+    expect(global.chrome.storage.sync.set).toHaveBeenCalled();
+    expect(syncStorage['blob-todo-meta-tasks']).toContain('legacy-1');
+    expect(syncStorage['blob-todo-task-legacy-1']).toBeDefined();
+    
+    // Assert: should clear the legacy localStorage to avoid re-migration
+    expect(localStorage.getItem('blob-todo-tasks')).toBeNull();
+  });
 });
