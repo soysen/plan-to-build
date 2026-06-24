@@ -226,27 +226,38 @@ const TaskStore = (() => {
   };
 })();
 
-// ── MOD-003 PhysicsEngine (Spring-Physics) ───────────────────────
 const PhysicsEngine = (() => {
   let blobs = [];
+  const blobMap = new Map();
+  const grid = []; // Zero-allocation grid cache
   const DAMPING = 0.95;    // Balanced fluid feel
   const DRIFT = 0.025;     // Stronger drift
   const ITERATIONS = 5;
   
   return {
     sync(tasks, vw, vh) {
-      const activeIds = tasks.map(t => t.id);
-      blobs = blobs.filter(b => activeIds.includes(b.id));
+      const activeIds = new Set(tasks.map(t => t.id));
+      blobs = blobs.filter(b => activeIds.has(b.id));
+      blobMap.clear();
+      blobs.forEach(b => blobMap.set(b.id, b));
       
-      const baseR = Math.min(vw, vh) * 0.07;
+      let baseR = Math.min(vw, vh) * 0.07;
+      
+      // 動態縮小 baseR，避免泡泡數量過多或螢幕過小導致擁擠變形
+      const totalWeightFactor = tasks.reduce((sum, task) => sum + Math.pow(task.weight || 3, 1.7), 0);
+      const totalArea = totalWeightFactor * Math.PI * baseR * baseR;
+      const maxArea = vw * vh * 0.35; // 限制在畫面 35% 面積以內，確保有排斥空間
+      if (totalArea > maxArea && totalArea > 0) {
+        baseR *= Math.sqrt(maxArea / totalArea);
+      }
       
       tasks.forEach(task => {
-        const existing = blobs.find(b => b.id === task.id);
+        const existing = blobMap.get(task.id);
         const r = baseR * Math.sqrt(Math.pow(task.weight || 3, 1.7));
         
         if (!existing) {
           // Add new blob
-          blobs.push({
+          const newBlob = {
             id: task.id,
             x: vw / 2, y: vh / 2,
             vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
@@ -265,7 +276,9 @@ const PhysicsEngine = (() => {
               offset: 0,
               v: 0
             }))
-          });
+          };
+          blobs.push(newBlob);
+          blobMap.set(task.id, newBlob);
         } else {
           // Update existing blob state
           existing.targetR = r;
@@ -277,15 +290,19 @@ const PhysicsEngine = (() => {
     update(vw, vh, mousePos) {
       // 1. Update Positions (Smooth Linear Flow)
       const time = Date.now() * 0.0005;
+      
+      // 動態調整速度：隨著視窗變小，速度放慢
+      const speedScale = Math.max(0.2, Math.min(1.0, Math.min(vw, vh) / 800));
+
       blobs.forEach((b, i) => {
         // Individualized organic drift
-        b.wanderAngle += b.wanderSpeed;
-        b.vx += Math.cos(b.wanderAngle) * DRIFT;
-        b.vy += Math.sin(b.wanderAngle) * DRIFT;
+        b.wanderAngle += b.wanderSpeed * speedScale;
+        b.vx += Math.cos(b.wanderAngle) * DRIFT * speedScale;
+        b.vy += Math.sin(b.wanderAngle) * DRIFT * speedScale;
         
         // Add a tiny bit of random jitter for extra slime feel
-        b.vx += (Math.random() - 0.5) * 0.01;
-        b.vy += (Math.random() - 0.5) * 0.01;
+        b.vx += (Math.random() - 0.5) * 0.01 * speedScale;
+        b.vy += (Math.random() - 0.5) * 0.01 * speedScale;
         
         b.x += b.vx; b.y += b.vy;
         b.vx *= DAMPING; b.vy *= DAMPING;
@@ -293,35 +310,78 @@ const PhysicsEngine = (() => {
 
       // 2. Verlet Relaxation (Constraint Resolution)
       for (let step = 0; step < ITERATIONS; step++) {
-        for (let i = 0; i < blobs.length; i++) {
-          for (let j = i + 1; j < blobs.length; j++) {
-            const b1 = blobs[i], b2 = blobs[j];
-            const dx = b2.x - b1.x, dy = b2.y - b1.y;
-            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-            const minDist = b1.r + b2.r + 15;
-            
-            if (dist < minDist) {
-              const overlap = (minDist - dist);
-              const nx = dx / dist, ny = dy / dist;
-              const push = overlap * 0.5;
-              b1.x -= nx * push; b1.y -= ny * push;
-              b2.x += nx * push; b2.y += ny * push;
-              
-              const dot = (b1.vx - b2.vx) * nx + (b1.vy - b2.vy) * ny;
-              b1.vx -= nx * dot * 0.2; b1.vy -= ny * dot * 0.2;
-              b2.vx += nx * dot * 0.2; b2.vy += ny * dot * 0.2;
+        if (blobs.length > 0) {
+          // Spatial Hashing Optimization
+          let maxR = 0;
+          for (let i = 0; i < blobs.length; i++) {
+            if (blobs[i].r > maxR) maxR = blobs[i].r;
+          }
+          const cellSize = maxR * 2 + 15;
+          const cols = Math.ceil(vw / cellSize) || 1;
+          const rows = Math.ceil(vh / cellSize) || 1;
+          const gridLength = cols * rows;
 
-              // Deform vertices at collision angle
-              const angle1 = Math.atan2(ny, nx);
-              const angle2 = Math.atan2(-ny, -nx);
-              b1.points.forEach(p => {
-                const diff = Math.abs(Math.atan2(Math.sin(p.angle - angle1), Math.cos(p.angle - angle1)));
-                if (diff < Math.PI / 3) p.v -= (Math.PI/3 - diff) * overlap * 0.2;
-              });
-              b2.points.forEach(p => {
-                const diff = Math.abs(Math.atan2(Math.sin(p.angle - angle2), Math.cos(p.angle - angle2)));
-                if (diff < Math.PI / 3) p.v -= (Math.PI/3 - diff) * overlap * 0.2;
-              });
+          // Ensure grid has enough arrays without GC overhead
+          if (grid.length < gridLength) {
+            for (let i = grid.length; i < gridLength; i++) grid.push([]);
+          }
+          for (let i = 0; i < gridLength; i++) {
+            grid[i].length = 0;
+          }
+
+          // Distribute blobs into grid
+          for (let i = 0; i < blobs.length; i++) {
+            const b = blobs[i];
+            const cx = Math.max(0, Math.min(cols - 1, Math.floor(b.x / cellSize)));
+            const cy = Math.max(0, Math.min(rows - 1, Math.floor(b.y / cellSize)));
+            grid[cx + cy * cols].push(b);
+          }
+
+          // Collision Check using Grid
+          for (let i = 0; i < blobs.length; i++) {
+            const b1 = blobs[i];
+            const cx = Math.max(0, Math.min(cols - 1, Math.floor(b1.x / cellSize)));
+            const cy = Math.max(0, Math.min(rows - 1, Math.floor(b1.y / cellSize)));
+
+            // Check surrounding 9 cells
+            for (let gridX = Math.max(0, cx - 1); gridX <= Math.min(cols - 1, cx + 1); gridX++) {
+              for (let gridY = Math.max(0, cy - 1); gridY <= Math.min(rows - 1, cy + 1); gridY++) {
+                const cell = grid[gridX + gridY * cols];
+                for (let j = 0; j < cell.length; j++) {
+                  const b2 = cell[j];
+                  if (b1.id >= b2.id) continue; // Prevent double check and self check
+
+                  const dx = b2.x - b1.x, dy = b2.y - b1.y;
+                  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                  const minDist = b1.r + b2.r + 15;
+
+                  if (dist < minDist) {
+                    const overlap = (minDist - dist);
+                    const nx_dir = dx / dist, ny_dir = dy / dist;
+                    const push = overlap * 0.5;
+                    b1.x -= nx_dir * push; b1.y -= ny_dir * push;
+                    b2.x += nx_dir * push; b2.y += ny_dir * push;
+
+                    const dot = (b1.vx - b2.vx) * nx_dir + (b1.vy - b2.vy) * ny_dir;
+                    b1.vx -= nx_dir * dot * 0.2; b1.vy -= ny_dir * dot * 0.2;
+                    b2.vx += nx_dir * dot * 0.2; b2.vy += ny_dir * dot * 0.2;
+
+                    // Deform vertices at collision angle (Capped to prevent shape collapse)
+                    const maxOverlap1 = Math.min(overlap, b1.r * 0.35);
+                    const maxOverlap2 = Math.min(overlap, b2.r * 0.35);
+                    const angle1 = Math.atan2(ny_dir, nx_dir);
+                    const angle2 = Math.atan2(-ny_dir, -nx_dir);
+                    b1.points.forEach(p => {
+                      const diff = Math.abs(Math.atan2(Math.sin(p.angle - angle1), Math.cos(p.angle - angle1)));
+                      if (diff < Math.PI / 3) p.v -= (Math.PI / 3 - diff) * maxOverlap1 * 0.05;
+                    });
+                    b2.points.forEach(p => {
+                      const diff = Math.abs(Math.atan2(Math.sin(p.angle - angle2), Math.cos(p.angle - angle2)));
+                      if (diff < Math.PI / 3) p.v -= (Math.PI / 3 - diff) * maxOverlap2 * 0.05;
+                    });
+                  }
+                }
+              }
             }
           }
         }
@@ -358,7 +418,8 @@ const PhysicsEngine = (() => {
         });
       });
     },
-    getBlobs() { return blobs; }
+    getBlobs() { return blobs; },
+    getBlobById(id) { return blobMap.get(id); }
   };
 })();
 
@@ -405,74 +466,82 @@ const CanvasRenderer = {
   }
 };
 
-// ── MOD-005 DOMOverlay ───────────────────────────────────────────
-const DOMOverlay = {
-  sync(tasks, blobs, container) {
-    // Remove stale
-    container.querySelectorAll('.blob-wrapper').forEach(el => {
-      if (!tasks.find(t => t.id === el.dataset.id)) el.remove();
-    });
+const DOMOverlay = (() => {
+  const wrapperCache = new Map();
 
-    tasks.forEach(task => {
-      const b = blobs.find(blob => blob.id === task.id);
-      if (!b) return;
-
-      let wrapper = container.querySelector(`.blob-wrapper[data-id="${task.id}"]`);
-      if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.className = 'blob-wrapper';
-        wrapper.dataset.id = task.id;
-        wrapper.innerHTML = `
-          <div class="blob">
-            <span class="blob-done-mark">做完了</span>
-            <span class="blob-title"></span>
-            <span class="blob-hint"></span>
-            <button class="blob-check" aria-label="標記完成">做完了</button>
-          </div>`;
-        container.appendChild(wrapper);
-        
-        const el = wrapper.querySelector('.blob');
-        el.addEventListener('click', e => {
-          if (e.target.closest('.blob-check')) return;
-          const t = TaskStore.getById(task.id);
-          if (t.done) {
-            el.classList.add('popping');
-            const b = PhysicsEngine.getBlobs().find(bl => bl.id === task.id);
-            if (b) b.isPopping = true;
-            setTimeout(() => TaskStore.delete(task.id), 400);
-          } else {
-            const children = TaskStore.getChildren(task.id);
-            if (children.length) SubtaskView.enter(t);
-            else ModalManager.openEdit(task.id);
-          }
-        });
-        el.querySelector('.blob-check').addEventListener('click', e => {
-          e.stopPropagation(); TaskStore.toggleDone(task.id);
-        });
+  return {
+    sync(tasks, blobs, container) {
+      // Remove stale
+      const activeIds = new Set(tasks.map(t => t.id));
+      for (const [id, el] of wrapperCache.entries()) {
+        if (!activeIds.has(id)) {
+          el.remove();
+          wrapperCache.delete(id);
+        }
       }
 
-      const el = wrapper.querySelector('.blob');
-      const titleEl = el.querySelector('.blob-title');
-      const hintEl = el.querySelector('.blob-hint');
-      
-      wrapper.style.transform = `translate(${b.x}px, ${b.y}px)`;
-      
-      // Dynamic Font Size based on Bubble Radius (Scaled down for Level 1/2)
-      const baseSize = b.r / 68; 
-      el.style.fontSize = `${baseSize}rem`;
-      
-      el.style.width = `${b.r * 2}px`;
-      el.style.height = `${b.r * 2}px`;
-      // No more left/top/margin - centered via CSS transform
-      
-      el.classList.toggle('done', task.done);
-      titleEl.textContent = task.title;
-      const notes = task.notes ? task.notes.trim() : '';
-      hintEl.textContent = notes;
-      hintEl.hidden = !notes;
-    });
-  }
-};
+      tasks.forEach(task => {
+        const b = PhysicsEngine.getBlobById(task.id);
+        if (!b) return;
+
+        let wrapper = wrapperCache.get(task.id);
+        if (!wrapper) {
+          wrapper = document.createElement('div');
+          wrapper.className = 'blob-wrapper';
+          wrapper.dataset.id = task.id;
+          wrapper.innerHTML = `
+            <div class="blob">
+              <span class="blob-done-mark">做完了</span>
+              <span class="blob-title"></span>
+              <span class="blob-hint"></span>
+              <button class="blob-check" aria-label="標記完成">做完了</button>
+            </div>`;
+          container.appendChild(wrapper);
+          wrapperCache.set(task.id, wrapper);
+          
+          const el = wrapper.querySelector('.blob');
+          el.addEventListener('click', e => {
+            if (e.target.closest('.blob-check')) return;
+            const t = TaskStore.getById(task.id);
+            if (t.done) {
+              el.classList.add('popping');
+              const bState = PhysicsEngine.getBlobById(task.id);
+              if (bState) bState.isPopping = true;
+              setTimeout(() => TaskStore.delete(task.id), 400);
+            } else {
+              const children = TaskStore.getChildren(task.id);
+              if (children.length) SubtaskView.enter(t);
+              else ModalManager.openEdit(task.id);
+            }
+          });
+          el.querySelector('.blob-check').addEventListener('click', e => {
+            e.stopPropagation(); TaskStore.toggleDone(task.id);
+          });
+        }
+
+        const el = wrapper.querySelector('.blob');
+        const titleEl = el.querySelector('.blob-title');
+        const hintEl = el.querySelector('.blob-hint');
+        
+        wrapper.style.transform = `translate(${b.x}px, ${b.y}px)`;
+        
+        // Dynamic Font Size based on Bubble Radius (Scaled down for Level 1/2)
+        const baseSize = b.r / 68; 
+        el.style.fontSize = `${baseSize}rem`;
+        
+        el.style.width = `${b.r * 2}px`;
+        el.style.height = `${b.r * 2}px`;
+        // No more left/top/margin - centered via CSS transform
+        
+        el.classList.toggle('done', task.done);
+        titleEl.textContent = task.title;
+        const notes = task.notes ? task.notes.trim() : '';
+        hintEl.textContent = notes;
+        hintEl.hidden = !notes;
+      });
+    }
+  };
+})();
 
 // ── MOD-005 ModalManager ──────────────────────────────────────────
 const ModalManager = (() => {
@@ -624,13 +693,14 @@ const App = {
   canvas: document.getElementById('blob-canvas'),
   ctx: document.getElementById('blob-canvas').getContext('2d'),
   emptyState: document.getElementById('empty-state'),
+  activeTasks: [],
 
   refresh() {
     const parent = SubtaskView.getParent();
-    const tasks = parent ? TaskStore.getChildren(parent.id) : TaskStore.getTopLevel();
+    this.activeTasks = parent ? TaskStore.getChildren(parent.id) : TaskStore.getTopLevel();
     const vw = window.innerWidth, vh = window.innerHeight;
     
-    const isEmpty = tasks.length === 0;
+    const isEmpty = this.activeTasks.length === 0;
     this.emptyState.hidden = !isEmpty;
     document.getElementById('add-btn').style.display = isEmpty ? 'none' : 'flex';
     
@@ -642,7 +712,7 @@ const App = {
     }
     
     // Sync physics engine with current tasks
-    PhysicsEngine.sync(tasks, vw, vh);
+    PhysicsEngine.sync(this.activeTasks, vw, vh);
   },
 
   mousePos: null,
@@ -657,9 +727,7 @@ const App = {
     const blobs = PhysicsEngine.getBlobs();
     CanvasRenderer.render(this.ctx, blobs);
     
-    const parent = SubtaskView.getParent();
-    const tasks = parent ? TaskStore.getChildren(parent.id) : TaskStore.getTopLevel();
-    DOMOverlay.sync(tasks, blobs, this.canvas.parentElement);
+    DOMOverlay.sync(this.activeTasks, blobs, this.canvas.parentElement);
     
     requestAnimationFrame(() => this.loop());
   },
