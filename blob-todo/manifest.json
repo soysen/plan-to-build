@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Blob Todo",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Organic, visual task manager for your new tab",
   "chrome_url_overrides": {
     "newtab": "index.html"

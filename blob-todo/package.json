@@ -1,6 +1,6 @@
 {
   "name": "blob-todo",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "一個有機、具備物理特性的視覺化任務管理器，專為 Chrome 新分頁設計。",
   "main": "app.js",
   "scripts": {
