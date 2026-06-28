@@ -232,7 +232,7 @@ const PhysicsEngine = (() => {
   const grid = []; // Zero-allocation grid cache
   const DAMPING = 0.95;    // Balanced fluid feel
   const DRIFT = 0.025;     // Stronger drift
-  const ITERATIONS = 5;
+  const ITERATIONS = 2;
   
   return {
     sync(tasks, vw, vh) {
@@ -628,7 +628,8 @@ const SubtaskView = (() => {
       breadcrumb.innerHTML = `
         <span class="crumb" id="bc-home" role="button" tabindex="0">所有任務</span>
         <span class="sep">›</span>
-        <span class="current">${parentTask.title}</span>`;
+        <span class="current"></span>`;
+      breadcrumb.querySelector('.current').textContent = parentTask.title;
       document.getElementById('bc-home').addEventListener('click', () => SubtaskView.exit());
     }
   }
@@ -657,15 +658,36 @@ const HistoryManager = (() => {
       list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">歷史清單是空的</div>';
       return;
     }
-    list.innerHTML = deleted.map(t => `
-      <div class="history-item" style="padding:16px; border-bottom:1px solid var(--input-bg); display:flex; justify-content:space-between; align-items:center;">
-        <div style="flex:1;">
-          <div style="font-weight:600; color:var(--text);">${t.title}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">刪除於: ${new Date(t.deletedAt).toLocaleString()}</div>
-        </div>
-        <button class="btn-restore" data-id="${t.id}" style="padding:6px 12px; border-radius:8px; border:1px solid var(--accent); background:none; color:var(--accent); cursor:pointer;">恢復</button>
-      </div>
-    `).join('');
+    list.innerHTML = '';
+    deleted.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.style.cssText = 'padding:16px; border-bottom:1px solid var(--input-bg); display:flex; justify-content:space-between; align-items:center;';
+      
+      const leftCol = document.createElement('div');
+      leftCol.style.flex = '1';
+      
+      const titleEl = document.createElement('div');
+      titleEl.style.cssText = 'font-weight:600; color:var(--text);';
+      titleEl.textContent = t.title;
+      
+      const dateEl = document.createElement('div');
+      dateEl.style.cssText = 'font-size:0.75rem; color:var(--text-muted);';
+      dateEl.textContent = `刪除於: ${new Date(t.deletedAt).toLocaleString()}`;
+      
+      leftCol.appendChild(titleEl);
+      leftCol.appendChild(dateEl);
+      
+      const btn = document.createElement('button');
+      btn.className = 'btn-restore';
+      btn.dataset.id = t.id;
+      btn.style.cssText = 'padding:6px 12px; border-radius:8px; border:1px solid var(--accent); background:none; color:var(--accent); cursor:pointer;';
+      btn.textContent = '恢復';
+      
+      item.appendChild(leftCol);
+      item.appendChild(btn);
+      list.appendChild(item);
+    });
   };
 
   btnOpen.addEventListener('click', () => { render(); modal.showModal(); });
