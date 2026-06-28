@@ -193,6 +193,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - 進場閘門：開始建置前（確認 plan 或 agent status 與任務 ID）。
 - 切片閘門：每個切片完成後（驗證證據與文件同步）。
 - 狀態閘門：進入 `Blocked / Paused / Needs input` 時（必問繼續或重置）。
+- 審核閘門：在交付前如果缺乏 Cross-Model Review Marker，狀態強制退回 `Blocked` 或 `In progress`。
 - 交付閘門：宣告完成前（DoD 與文件同步完整性）。
 
 除了上述閘門，其他步驟維持流暢執行，不強制中斷。
@@ -284,6 +285,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 3. 驗證證據：至少一項與任務類型相符的證據已落地（參照最小驗證矩陣）。
 4. 文件同步：至少同步兩份活文件，其中必含 `.github/worklog/agent-status.md`；另一份為 plan、spec、worklog 或 launch。
 5. 未完成項揭露：若有未執行驗證或延後事項，已明確記錄原因與後續入口。
+6. 審核標記：對於 `standard` 與 `heavy` 任務，必須通過 `cross-model-review` 技能審查，並於活文件中留下通過標記。
 
 ### 完成前檢查清單（Quick Check）
 

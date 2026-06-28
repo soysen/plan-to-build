@@ -134,6 +134,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - `.github/worklog/agent-status.md` 已更新；`standard / heavy` 任務的 build plan 也已同步。
 - `Active Task` 已結束或提供清楚恢復入口。
 - `standard` 任務已完成輕量 retro；`heavy` 任務已完成完整 retro。
+- **Stop Hook 守門員**：對於 `standard` 與 `heavy` 任務，檢查 Task Card 或 agent status 的尾端是否有明確的 `> [!CHECK] Cross-Model Review Approved by [Model/Role Name]` 標記。若無，強制攔截任務結案，並先執行 `cross-model-review` skill。
 
 ## 溝通規範
 
