@@ -1,6 +1,6 @@
 ---
 name: shipping-and-launch
-description: 準備生產環境部署。使用時機：準備部署到生產環境、需要發布前檢查清單、設置監控、規劃漸進式推出，或需要回滾策略時。觸發關鍵字：部署、deploy、launch、上線、發布、production、shipping、rollout、回滾、pre-launch checklist。
+description: "準備生產環境部署。語意情境：當使用者表達「準備上線 (Launch)」、「列出發布前檢查清單」、「規劃 Rollout 策略」時觸發。"
 argument-hint: "描述要部署的功能或版本，例如：部署任務分享功能到生產環境"
 user-invocable: true
 ---

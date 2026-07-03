@@ -1,6 +1,6 @@
 ---
 name: post-launch-optimization
-description: 上線後追蹤產品成效並規劃優化迭代。使用時機：功能已發布到真實使用者、需要檢查 adoption 或 KPI 是否達標、分析使用者回饋、整理 post-launch backlog，或規劃下一輪實驗與優化時。觸發關鍵字：上線後、發布後、post-launch、launch review、成效追蹤、adoption、retention、KPI、優化 backlog、實驗規劃。
+description: "上線後追蹤產品成效並規劃優化迭代。語意情境：當使用者表達「分析上線後的使用者回饋」、「看 KPI 有沒有達標」、「規劃下一輪實驗」時觸發。"
 argument-hint: "描述已上線的功能、目標指標與目前觀察，例如：會員邀請功能已上線一週，想檢查 adoption 和下一步優化方向"
 user-invocable: true
 ---

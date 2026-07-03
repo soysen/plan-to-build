@@ -1,6 +1,6 @@
 ---
 name: debugging-and-error-recovery
-description: 系統性地診斷並修復錯誤。使用時機：遇到 bug、測試失敗、執行期錯誤、建置失敗，或需要理解意外行為時。觸發關鍵字：bug、debug、錯誤、error、exception、crash、失敗、not working、異常行為、追蹤問題。
+description: "系統性地診斷並修復錯誤。語意情境：當使用者表達「程式報錯了」、「跑不起來幫我除錯」、「為什麼會出 exception」或遇到建置失敗時觸發。"
 argument-hint: "描述遇到的錯誤或問題，例如：任務建立後頁面空白，Console 顯示 TypeError"
 user-invocable: true
 ---

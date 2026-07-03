@@ -1,6 +1,6 @@
 ---
 name: source-driven-development
-description: 以官方文件為根據進行實作。使用時機：想要有可信賴、有引用來源的程式碼、使用任何框架或函式庫的特定功能、或需要確保遵循當前版本最佳實踐時。觸發關鍵字：source-driven、官方文件、文件驗證、cite source、引用來源、最新 API、框架最佳實踐、避免過時 API。
+description: "以官方文件為根據進行實作。語意情境：當使用者表達「請查閱最新官方文件來寫」、「確保這段 Code 符合最佳實踐，不要幻覺」時觸發。"
 argument-hint: "描述要實作的功能和使用的框架/版本，例如：使用 React 19 的 useActionState 實作表單送出"
 user-invocable: true
 ---

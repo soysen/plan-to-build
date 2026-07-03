@@ -1,6 +1,6 @@
 ---
 name: git-commit
-description: "執行 git 提交，自動整理暫存區、產出符合規範的 commit message，並在無其他待提交變更時自動升版 package.json。使用時機：完成一個任務或功能後需要提交程式碼時。觸發關鍵字：git commit、提交、commit、版號升版、bump version、暫存、git add、semantic versioning。"
+description: "執行 git 提交與版號管理。語意情境：當使用者表達「完成任務了，幫我 commit」、「準備提交程式碼並升級版號」時觸發。"
 argument-hint: "輸入提交類型與描述，如：feat TASK-001 實作登入 API，或留空由 skill 自動推斷"
 ---
 

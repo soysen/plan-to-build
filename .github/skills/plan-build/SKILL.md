@@ -1,6 +1,6 @@
 ---
 name: plan-build
-description: "根據 SA（系統分析）與 SD（系統設計）文件，產出可執行的建置計畫：任務拆解、工作估點、里程碑排程與 GitHub Issues 清單。使用時機：SA/SD 文件已確認，準備開始開發前的任務規劃。觸發關鍵字：建置計畫、任務拆解、工作估點、Sprint 規劃、開發計畫、GitHub Issues。"
+description: "產出可執行的建置計畫與任務拆解。語意情境：當使用者表達「Spec 確認了，幫我規劃任務跟點數」、「產生開發 GitHub Issues 清單」時觸發。"
 argument-hint: "輸入 SA/SD 文件路徑，或直接描述已確認的設計內容"
 ---
 

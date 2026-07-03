@@ -1,6 +1,6 @@
 ---
 name: documentation-and-adrs
-description: 記錄架構決策與文件撰寫。使用時機：做出重大架構決策、修改公開 API、交付影響使用者行為的功能、或需要讓未來的工程師和 AI Agent 理解決策脈絡時。觸發關鍵字：ADR、架構決策、文件、documentation、README、changelog、決策紀錄、為什麼這樣設計。
+description: "記錄架構決策與文件撰寫。語意情境：當使用者表達「幫我記錄這個架構決策 (ADR)」、「寫 README 說明」、「補充 API 文件」時觸發。"
 argument-hint: "描述要記錄的決策或文件範圍，例如：記錄選擇 PostgreSQL 作為主要資料庫的決策"
 user-invocable: true
 ---

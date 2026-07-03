@@ -1,6 +1,6 @@
 ---
 name: using-agent-skills
-description: 發現並調用適合的 Agent Skill。使用時機：開始新的工作階段、不確定哪個 skill 適用於當前任務，或需要了解完整的 skill 集合和開發生命週期流程時。觸發關鍵字：using skills、用哪個 skill、skill 選擇、哪個適合、從哪裡開始、agent skills、skill 索引。
+description: "發現並調用適合的 Agent Skill。語意情境：當使用者表達「不知道該用哪個 Skill」、「請幫我選擇適合的 Agent 工具」、「從哪裡開始好」時觸發。"
 argument-hint: "描述你目前的任務，Agent 將協助你選擇最適合的 skill"
 user-invocable: true
 ---

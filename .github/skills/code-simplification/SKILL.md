@@ -1,6 +1,6 @@
 ---
 name: code-simplification
-description: 在不改變行為的前提下簡化程式碼。使用時機：程式碼過於複雜難以理解、存在不必要的抽象、函式過長，或需要重構以提升可維護性時。觸發關鍵字：簡化、重構、refactor、simplify、cleanup、程式碼清理、移除複雜度、過度設計。
+description: "在不改變行為的前提下簡化程式碼。語意情境：當使用者表達「這段程式碼太複雜了幫我重構」、「移除過度設計」、「清理髒 code」時觸發。"
 argument-hint: "描述要簡化的程式碼或模組，例如：簡化任務過濾邏輯"
 user-invocable: true
 ---

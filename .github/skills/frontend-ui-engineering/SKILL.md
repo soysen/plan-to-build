@@ -1,6 +1,6 @@
 ---
 name: frontend-ui-engineering
-description: 建構生產品質的使用者介面。使用時機：建置或修改使用者介面、實作響應式版面、管理 UI 狀態，或當輸出需要達到生產品質而非 AI 生成的預設外觀時。觸發關鍵字：UI、前端、元件、component、React、樣式、版面、accessibility、RWD、互動設計。
+description: "建構生產品質的使用者介面。語意情境：當使用者表達「幫我刻這個 UI」、「畫面跑版了需要調整」、「製作響應式元件」時觸發。"
 argument-hint: "描述要建置的 UI 功能，例如：建置任務列表元件，包含篩選和空狀態"
 user-invocable: true
 ---

@@ -1,6 +1,6 @@
 ---
 name: api-and-interface-design
-description: 設計穩定的 API 與介面合約。使用時機：設計新的 REST/GraphQL/函式庫 API、在實作前確立介面合約、制定一致的錯誤格式，或需要讓前後端分離開發時。觸發關鍵字：api 設計、介面設計、contract-first、API contract、endpoint 設計、介面合約、錯誤格式。
+description: "設計穩定的 API 與介面合約。語意情境：當使用者表達「我們要設計這個 API」、「定義前後端介面格式」或「開一個新的 Endpoint」時觸發。"
 argument-hint: "描述要設計的 API 或介面，例如：設計任務管理系統的 REST API"
 user-invocable: true
 ---

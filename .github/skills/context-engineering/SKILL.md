@@ -1,6 +1,6 @@
 ---
 name: context-engineering
-description: 優化 AI Agent 的上下文設置。使用時機：開啟新的編碼工作階段、Agent 輸出品質下降（出現幻覺 API 或忽略專案慣例）、在不同任務間切換，或需要建立 rules 檔案來確保 AI 遵循專案規範時。觸發關鍵字：context、上下文、rules 檔案、copilot instructions、agent 設置、CLAUDE.md、專案規範、AI 品質。
+description: "優化 AI Agent 的上下文設置。語意情境：當使用者表達「AI 一直忽略專案慣例」、「幫我設定 rules 檔案」、「需要讓 Agent 更了解這個專案」時觸發。"
 argument-hint: "描述要設置的上下文範圍，例如：為 Node.js + React 專案建立 copilot-instructions"
 user-invocable: true
 ---

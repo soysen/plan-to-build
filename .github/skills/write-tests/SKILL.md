@@ -1,6 +1,6 @@
 ---
 name: write-tests
-description: "根據 SA、SD 與建置計畫，產出測試計畫文件（Test Plan）、單元測試程式碼骨架，以及測試執行後的測試報告（Test Report）。使用時機：技術文件已確認（SA/SD），需要在開始 TDD 實作前系統性地規劃測試策略、建立測試檔案骨架；或測試完成後需要產出測試報告。觸發關鍵字：測試計畫、單元測試、unit test、test plan、測試文件、撰寫測試、建立測試、測試報告、test report、覆蓋率報告、coverage report。"
+description: "產出測試計畫文件與單元測試。語意情境：當使用者表達「幫我寫單元測試」、「產出測試計畫」、「需要覆蓋率報告」時觸發。"
 argument-hint: "輸入要產出測試的模組名稱（如 MOD-001）或任務 ID（如 TASK-001），或輸入 all 全部產出"
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: performance-optimization
-description: 優化應用程式效能。使用時機：效能需求存在於規格中、使用者回報緩慢、Core Web Vitals 分數低於標準，或需要優化回應時間與載入速度時。觸發關鍵字：效能、performance、slow、緩慢、LCP、CLS、INP、N+1、bundle size、優化、load time。
+description: "優化應用程式效能。語意情境：當使用者表達「網站載入好慢」、「畫面卡卡的」、「Core Web Vitals 分數太低需要優化」時觸發。"
 argument-hint: "描述要優化的效能問題，例如：首頁 LCP 超過 4 秒，需要優化"
 user-invocable: true
 ---

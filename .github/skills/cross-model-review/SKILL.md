@@ -1,6 +1,6 @@
 ---
 name: cross-model-review
-description: 執行第三方模型審查，尋找邏輯盲點與邊界錯誤。使用時機：任務標記為 standard 或 heavy，在宣告完成前（Stop Hook 觸發時）必須執行此審查，以取得通過標記。觸發關鍵字：cross model review、第三方審查、stop hook、審查標記。
+description: "執行第三方模型審查，尋找邏輯盲點與邊界錯誤。語意情境：當任務宣告完成前觸發，或使用者表達「請用不同的角度檢查有沒有邏輯漏洞」時觸發。"
 argument-hint: "請指派其他模型或啟動獨立的 reviewer Persona 進行盲點檢查"
 user-invocable: true
 ---

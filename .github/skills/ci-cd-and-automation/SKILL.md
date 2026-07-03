@@ -1,6 +1,6 @@
 ---
 name: ci-cd-and-automation
-description: 建立 CI/CD 流水線與自動化品質關卡。使用時機：設置 GitHub Actions 工作流程、建立自動化測試/建置/部署管線，或需要在每次提交時強制執行品質標準時。觸發關鍵字：CI/CD、github actions、workflow、自動化、pipeline、持續整合、持續部署、lint、build check。
+description: "建立 CI/CD 流水線與自動化品質關卡。語意情境：當使用者表達「幫我設定 GitHub Actions」、「每次 push 都要自動跑測試跟 lint」或「建置自動部署管線」時觸發。"
 argument-hint: "描述要建立或改善的 CI/CD 管線，例如：為 Node.js 專案建立完整的 CI 管線"
 user-invocable: true
 ---

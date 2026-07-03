@@ -1,6 +1,6 @@
 ---
 name: incremental-implementation
-description: 以薄切片的方式逐步交付功能。使用時機：實作任何跨越多個檔案的功能、感覺一次要寫很多程式碼、或任務大到無法一步完成時。觸發關鍵字：incremental、逐步實作、分批、切片、thin vertical slice、逐步建置、一步一步。
+description: "以薄切片的方式逐步交付功能。語意情境：當使用者表達「這個功能很大，我們一步一步做」、「分批實作這個複雜功能」時觸發。"
 argument-hint: "描述要逐步實作的任務，例如：實作任務的 CRUD 功能"
 user-invocable: true
 ---

@@ -1,6 +1,6 @@
 ---
 name: tdd-build
-description: "以 TDD（測試驅動開發）方式逐一實作建置計畫中的任務：先寫失敗測試、再實作程式碼使測試通過、最後重構。使用時機：建置計畫已確立，開始逐一實作 TASK-XXX 任務時。觸發關鍵字：TDD、測試驅動、實作任務、開始開發、tdd-build、Red-Green-Refactor。"
+description: "以 TDD 方式逐一實作任務。語意情境：當使用者表達「開始照著計畫寫程式 (TDD)」、「請實作 TASK-XXX 先寫測試」時觸發。"
 argument-hint: "輸入要實作的任務 ID（如 TASK-001）或任務描述"
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: create-issues
-description: "根據不同開發階段（spec、design、plan、test、build）的產出文件，建立 GitHub Issues 或本地待辦任務，並支援 assignee、label、milestone 設定。使用時機：完成任一開發階段後需要建立追蹤用的 Issue 或 Task 時。觸發關鍵字：建立 issue、建立任務、create issue、task、待辦事項、指派、assignment、milestone、追蹤進度。"
+description: "建立 GitHub Issues 或本地待辦任務。語意情境：當使用者表達「幫我把這些任務開成 Issue」、「將這份 Spec 轉成待辦事項」時觸發。"
 argument-hint: "指定階段（spec|design|plan|test|build）與模式（github|local），如：plan github"
 ---
 

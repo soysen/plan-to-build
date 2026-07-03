@@ -1,6 +1,6 @@
 ---
 name: problem-validation
-description: 在寫 spec 前驗證問題與需求是否成立。使用時機：有想法或功能方向，但尚未確認痛點是否真實、使用者是否明確、替代方案是否不足、成功訊號是否可驗證時。觸發關鍵字：需求驗證、problem validation、用戶研究、訪談、驗證痛點、驗證需求、problem-solution fit、discovery。
+description: "驗證問題與需求是否成立。語意情境：當使用者表達「這個需求合理嗎？」、「使用者真的需要這個功能嗎？」或「想驗證痛點是否真實」時觸發。"
 argument-hint: "描述要驗證的問題、目標使用者與目前假設，例如：想確認中小團隊是否真的需要一個跨專案任務收斂工具"
 user-invocable: true
 ---

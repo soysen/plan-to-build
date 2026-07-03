@@ -1,6 +1,6 @@
 ---
 name: browser-testing-with-devtools
-description: 使用 Chrome DevTools MCP 進行瀏覽器端測試與除錯。使用時機：需要驗證前端 UI 行為、追蹤網路請求、檢查 DOM 狀態、分析 JavaScript 錯誤，或執行端對端驗證時。觸發關鍵字：browser testing、瀏覽器測試、devtools、chrome、UI 驗證、e2e、前端除錯、network 請求。
+description: "使用 Chrome DevTools 進行瀏覽器端測試與除錯。語意情境：當使用者表達「幫我測一下畫面上這個流程」、「檢查網路請求為什麼失敗」或「驗證前端 UI 行為」時觸發。"
 argument-hint: "描述要測試或驗證的 UI 行為，例如：驗證任務建立後列表正確更新"
 user-invocable: true
 ---

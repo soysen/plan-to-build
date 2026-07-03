@@ -1,6 +1,6 @@
 ---
 name: security-and-hardening
-description: 強化程式碼對抗安全漏洞。使用時機：處理使用者輸入、實作認證/授權、儲存或傳輸敏感資料，或整合外部 API 時。觸發關鍵字：security、安全性、SQL injection、XSS、CSRF、認證、授權、auth、敏感資料、OWASP、漏洞。
+description: "強化程式碼對抗安全漏洞。語意情境：當使用者表達「檢查有沒有 SQL Injection 或 XSS」、「實作權限控管」、「處理敏感資料」時觸發。"
 argument-hint: "描述要強化的安全面向，例如：審查任務 API 的輸入驗證和授權機制"
 user-invocable: true
 ---

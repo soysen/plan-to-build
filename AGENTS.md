@@ -64,11 +64,11 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 ### 4. 實作啟動閘門
 
-分級確認後，先更新活文件，再執行任何讀檔、搜尋、命令、編輯或驗證。
+分級確認後，先更新活文件，再執行任何讀檔、搜尋、命令、編輯或驗證。不論任務屬於哪個級別，啟動時都必須在對話或文件中明確輸出所選擇的 Skill Route。
 
-- `micro`：更新 `.github/worklog/agent-status.md` 為 `進行中`，記錄一行目的描述即可。
+- `micro`：更新 `.github/worklog/agent-status.md` 為 `進行中`，記錄一行目的描述與使用的 Skill Route 即可。
 - `standard / heavy`：同時完成：
-  - 在 `.github/harness/plan/{feature-name}-build-plan.md` 建立或更新本輪切片。
+  - 在 `.github/harness/plan/{feature-name}-build-plan.md` 建立或更新本輪切片，並填寫 Skill Route。
   - 更新 `.github/worklog/agent-status.md` 的 `Active Task` 為 `進行中`。
 
 兩份活文件缺一不可；僅更新其中一份視同閘門未通過。
@@ -79,21 +79,23 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 這個 repo 的 skills 位於 `.github/skills/`。任務符合某個 skill 時，必須先讀取對應 `SKILL.md`，再依其流程執行。
 
+**語意意圖判斷：** AI 應主動分析使用者的自然語言與潛在目的，將其對應至最合適的 Skill。不可僅依賴死板的「觸發關鍵字」；只要使用者的描述（如「網站變好慢」、「畫面跑版」、「幫我拆分任務」）在語意上符合某個 Skill 的解決範圍，就應該主動導向該 Skill。
+
 常見路由：
 
-- 模糊想法：`idea-refine`
-- 問題或需求驗證：`problem-validation`
-- 需求文件或 spec：`analyze-spec`
-- 架構、SA、SD：`design-architecture`
-- 建置計畫或任務拆解：`plan-build`
-- 實作任務：`tdd-build` 或 `incremental-implementation`
-- UI 任務：`frontend-ui-engineering`
-- 測試計畫或測試報告：`write-tests`
-- 錯誤或失敗：`debugging-and-error-recovery`
-- 程式碼審查：`code-review-and-quality`
-- 文件或 ADR：`documentation-and-adrs`
-- Git commit：`git-commit`
-- 不確定路由：`using-agent-skills`
+- 「我有個點子但不知道怎麼開始」、「想探索方向」 ➔ `idea-refine`
+- 「這個需求合理嗎？」、「驗證痛點是否真實」 ➔ `problem-validation`
+- 「幫我分析這段需求並寫成 Spec」、「有客戶描述想轉為規格」 ➔ `analyze-spec`
+- 「準備開始架構設計」、「幫我切分模組與畫 Sitemap」 ➔ `design-architecture`
+- 「Spec 確認了，幫我規劃任務跟點數」、「產生開發 GitHub Issues」 ➔ `plan-build`
+- 「開始照著計畫寫程式」、「請實作 TASK-XXX」 ➔ `tdd-build` 或 `incremental-implementation`
+- 「幫我刻這個 UI」、「畫面跑版了需要調整」、「製作響應式元件」 ➔ `frontend-ui-engineering`
+- 「寫單元測試」、「產出測試計畫或覆蓋率報告」 ➔ `write-tests`
+- 「程式報錯了」、「跑不起來幫我除錯」、「為什麼會出 exception」 ➔ `debugging-and-error-recovery`
+- 「幫我做 Code Review」、「檢查這支 PR 有沒有問題」 ➔ `code-review-and-quality`
+- 「幫我記錄架構決策 (ADR)」、「寫 README 說明」 ➔ `documentation-and-adrs`
+- 「完成任務了，幫我 git commit」、「準備提交程式碼」 ➔ `git-commit`
+- 「不知道該用哪個 Skill」、「請幫我選擇適合的 Agent Skill」 ➔ `using-agent-skills`
 
 若 skill 與 harness workflow 都適用：先用本檔與 harness 完成啟動、狀態與追蹤，再讀取對應 skill 執行專門步驟。
 
@@ -104,6 +106,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 ```text
 任務卡 (Task Card)
 - 目標：[啟動時填寫]
+- 路由 (Skill Route)：[啟動時填寫，標註使用的 skill，如無則填 none]
 - 範圍 (In/Out)：[啟動時填寫]
 - 驗收標準：[啟動時填寫]
 - 更新檔案：[切片或完成時補齊，列出路徑]
@@ -116,6 +119,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 ## 全域行為規則
 
 - 狀態先於動作：任何工具呼叫、實作、驗證前，先更新對應活文件。
+- 活文件確保機制：寫入活文件（如 `worklog`、`plan` 等）時，若對應的資料夾或檔案不存在，必須主動建立（包含建立父目錄），不可因找不到路徑而跳過同步。
 - 單一切片工作循環：`standard / heavy` 任務一次只推進一個切片，依序完成宣告、執行、驗證與雙寫。
 - 活文件持續回寫：建置進行中也要同步 plan / worklog / agent status，不可只在結尾補寫。
 - 失敗即時阻塞：build/test/lint/typecheck 非 0 結束時，先把任務標為 `阻塞`，補 checkpoint，再進入除錯。

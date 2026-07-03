@@ -1,6 +1,6 @@
 ---
 name: code-review-and-quality
-description: 執行多維度的程式碼審查。使用時機：審查 PR、在合併前進行品質檢查，或需要針對正確性、可讀性、架構、安全性與效能五個維度全面評估程式碼時。觸發關鍵字：code review、程式碼審查、PR 審查、品質審查、review、合併前檢查。
+description: "執行多維度的程式碼審查。語意情境：當使用者表達「幫我 Review 這段 Code」、「檢查這支 PR 有沒有問題」或需要針對架構與效能全面評估時觸發。"
 argument-hint: "描述要審查的程式碼範圍，例如：審查任務建立功能的 PR"
 user-invocable: true
 ---

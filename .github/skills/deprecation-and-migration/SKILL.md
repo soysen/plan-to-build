@@ -1,6 +1,6 @@
 ---
 name: deprecation-and-migration
-description: 管理廢棄功能與系統遷移。使用時機：移除舊系統或 API、將消費者從舊實作遷移到新實作，或決定是否繼續維護現有程式碼時。觸發關鍵字：廢棄、deprecation、migration、遷移、移除、sunset、舊系統、legacy、升級、替換。
+description: "管理廢棄功能與系統遷移。語意情境：當使用者表達「我們要淘汰這個舊 API」、「將舊系統遷移到新架構」或「移除不再使用的功能」時觸發。"
 argument-hint: "描述要廢棄或遷移的功能，例如：廢棄舊版 TaskService 並遷移到新版"
 user-invocable: true
 ---

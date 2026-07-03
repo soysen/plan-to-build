@@ -1,6 +1,6 @@
 ---
 name: post-deploy-monitoring
-description: 上線後短週期監控與驗證。使用時機：剛完成 deploy、需要在前 10 分鐘到 24 小時內確認錯誤率、延遲、關鍵流程、console errors、health checks 與回滾訊號時。觸發關鍵字：post-deploy、部署後監控、canary、health check、verify deploy、剛上線、rollout 驗證、回滾判斷。
+description: "上線後短週期監控與驗證。語意情境：當使用者表達「剛上線幫我盯著錯誤率」、「驗證這次部署有沒有問題」或「確認是否需要 Rollback」時觸發。"
 argument-hint: "描述剛上線的功能、環境與要觀察的關鍵路徑，例如：邀請功能剛上 production，想監控前 30 分鐘的 health 與 rollback signal"
 user-invocable: true
 ---

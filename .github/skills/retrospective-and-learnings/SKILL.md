@@ -1,6 +1,6 @@
 ---
 name: retrospective-and-learnings
-description: 在開發、發布或里程碑後整理學習與流程改進。使用時機：一個 Sprint、功能、發布或事故處理結束後，需要回顧哪些做得好、哪裡卡住、哪些模式要標準化、哪些問題要防止再次發生時。觸發關鍵字：retro、retrospective、回顧、lessons learned、postmortem、process improvement、團隊學習。
+description: "整理學習與流程改進 (Retro)。語意情境：當使用者表達「Sprint 結束了來做個 Retro」、「整理這次事故的 postmortem」、「這專案學到什麼」時觸發。"
 argument-hint: "描述要回顧的範圍與時間，例如：回顧這次會員邀請功能從 spec 到上線的整個流程"
 user-invocable: true
 ---
