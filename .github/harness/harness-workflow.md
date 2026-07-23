@@ -137,7 +137,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 
 - `micro`：可選擇性補充 retro，非強制。
 - `standard`：必須完成輕量 retro（至少 3 點：做得好 / 問題 / 下次調整），並回寫到 build plan 或 `.github/worklog/agent-status.md`。
-- `heavy`：必須完成完整 retro，建議輸出 `.github/harness/retrospectives/{feature-name}-retro.md`，並在活文件附上連結與摘要。
+- `heavy`：必須完成完整 retro，建議輸出 `{project-name}/doc/retrospectives/{feature-name}-retro.md`，並在活文件附上連結與摘要。
 
 若未滿足上述條件，任務狀態不得標記為 `已完成`。
 

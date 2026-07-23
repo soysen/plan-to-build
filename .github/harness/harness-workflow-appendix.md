@@ -9,7 +9,7 @@
 | 路由       | `using-agent-skills`                                        | 建議下一個 workflow                                               |
 | 想法       | `idea-refine`                                               | 可執行概念、MVP 邊界、核心假設                                    |
 | 驗證       | `problem-validation`                                        | 問題、受眾、替代方案與成功訊號                                    |
-| 定義       | `analyze-spec`                                              | `.github/harness/spec/{feature-name}-spec.md`                     |
+| 定義       | `analyze-spec`                                              | `{project-name}/doc/spec/{feature-name}-spec.md`                  |
 | 設計       | `design-architecture`                                       | Sitemap、SA、SD 或架構筆記                                        |
 | API 合約   | `api-and-interface-design`                                  | endpoint / interface contract 與錯誤格式                          |
 | 規劃       | `plan-build`                                                | `.github/harness/plan/{feature-name}-build-plan.md` 與 agent 狀態 |
@@ -36,13 +36,15 @@
 
 | 產物       | 路徑                                                     |
 | ---------- | -------------------------------------------------------- |
-| 問題探索   | `.github/harness/discovery/{feature-name}-discovery.md`  |
-| Spec       | `.github/harness/spec/{feature-name}-spec.md`            |
-| 架構與設計 | `.github/harness/design/{feature-name}-architecture.md`  |
+| 問題探索   | `{project-name}/doc/discovery/{feature-name}-discovery.md` |
+| Spec       | `{project-name}/doc/spec/{feature-name}-spec.md`         |
+| 架構與設計 | `{project-name}/doc/design/{feature-name}-architecture.md` |
 | 建置計畫   | `.github/harness/plan/{feature-name}-build-plan.md`      |
 | Agent 狀態 | `.github/worklog/agent-status.md`                        |
-| 交付筆記   | `.github/harness/launch/{feature-name}-launch.md`        |
-| 回顧       | `.github/harness/retrospectives/{feature-name}-retro.md` |
+| 測試計畫   | `{project-name}/doc/test/{feature-name}-test-plan.md`    |
+| 交付筆記   | `{project-name}/doc/launch/{feature-name}-launch.md`      |
+| 回顧       | `{project-name}/doc/retrospectives/{feature-name}-retro.md` |
+
 
 ## 純資訊查詢 vs 工具序列範例
 
