@@ -7,27 +7,22 @@ user-invocable: true
 
 # 除錯與錯誤恢復
 
-## 概覽
+## 核心原則與行為邊界
 
-系統性地找出並修復錯誤。憑直覺猜測和隨機修改程式碼是最慢的除錯方式——它浪費時間、製造更多 bug，而且往往掩蓋問題而非解決問題。正確的流程：重現 → 定位 → 縮小範圍 → 修復 → 防守 → 驗證。
+> **[Guardrails] 絕對行為邊界**：
+> 1. **嚴禁 Vibe Debugging (禁止憑感覺改 code)**：在未取得完整 Error Traceback 之前，**禁止**提出修復假設或修改任何程式碼。
+> 2. **Reproduction Mandatory (重現優先)**：未寫出最小重現案例 (Reproduction Case) 之前，禁止對產品邏輯下手。
+> 3. **No Symptom Patching (禁止治標不治本)**：嚴禁使用空 catch (`try {} catch {}`) 吞掉錯誤、隨意補 `if (!x) return null` 假資料 fallback 或註解掉失敗的測試。修復必須針對 Root Cause。
 
-## 適用時機
-
-- 測試失敗且不清楚原因
-- 執行期出現未預期的錯誤或崩潰
-- 功能行為與預期不符
-- 建置或 lint 失敗
-- 效能突然下降
-
-## 除錯流程
+## 除錯流程 (Root-Cause Recovery Flow)
 
 ```
-1. REPRODUCE → 可靠地重現問題
-2. LOCALIZE  → 縮小問題範圍
-3. REDUCE    → 找到最小重現案例
-4. FIX       → 解決根本原因（非症狀）
-5. GUARD     → 加入測試防止再次發生
-6. VERIFY    → 確認問題已解決且沒有引入新問題
+1. REPRODUCE → 穩定重現問題 (Traceback & Repro Case)
+2. LOCALIZE  → 二分法與 Call-stack 追蹤定位
+3. REDUCE    → 縮小至 Minimal Repro Unit Test
+4. FIX       → 解決 Upstream 根本原因 (Root Cause Fix)
+5. GUARD     → 撰寫防守測試 (Defense Test / Regression Test)
+6. VERIFY    → 全套 Suite 驗證 (No Side Effects)
 ```
 
 ---

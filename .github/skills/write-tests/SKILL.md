@@ -4,14 +4,18 @@ description: "產出測試計畫文件與單元測試。語意情境：當使用
 argument-hint: "輸入要產出測試的模組名稱（如 MOD-001）或任務 ID（如 TASK-001），或輸入 all 全部產出"
 ---
 
-# 測試文件與單元測試產出
+## 核心原則與行為邊界
 
-## 使用時機
+> **[Guardrails] 絕對行為邊界**：
+> 1. **關注點分離 (Separation of Concerns)**：本 Skill 的職責**僅限於**規劃 Test Plan 與建立測試骨架（`*.test.ts` / `*.spec.ts`）。**絕對禁止**跨界編輯 `src/` 或產品邏輯代碼。
+> 2. **No Fake Assertions (禁止假斷言)**：測試骨架主體必須保留 `// TODO: 實作` 或明示的 Placeholder，禁止為了讓測試「看起來通過」而寫下空的斷言 (`expect(true).toBe(true)`)。
 
-- SA / SD 文件已確認，準備系統性地規劃測試策略
-- 需要在 TDD 實作前建立測試計畫文件（Test Plan）
-- 需要為特定模組或任務產出測試檔案骨架（含 describe / it 結構）
-- 需要確認測試覆蓋率目標與測試分層策略
+## 適用時機
+
+- SA / SD 文件已確認，準備系統性地規劃測試策略 (Test Pyramid Allocation)
+- 需要在 TDD 實作前建立測試計畫文件 (Test Plan Specification)
+- 需要為特定模組產出規範化的測試檔案骨架 (AAA Pattern Structure)
+- 需要定義 Code Coverage 門檻與測試分層 (Unit / Integration / Component / E2E)
 
 ## 輸入來源
 

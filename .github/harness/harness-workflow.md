@@ -12,16 +12,17 @@
 
 完整步驟地圖詳見 `.github/harness/harness-workflow-appendix.md`。
 
-## 啟動檢查清單（One-pass）
+## 啟動檢查清單 (Startup Checklist)
 
 每次接到新需求時，建議依下列固定順序一次完成檢查，避免在多份文件間反覆跳轉。
 
-1. 未完成任務閘門：依 `AGENTS.md` 的 active state precedence 先判定是否有未完成 active 任務。
-2. Input 收斂閘門：檢查 Task Card 啟動欄位（目標、範圍、驗收）是否完整；若有缺漏，先標 `Needs input`。
-3. 任務分級閘門：判定 micro / standard / heavy，決定是否需要完整追蹤卡與斷點測試。
-4. 實作啟動閘門：先把任務寫入 plan 或 agent status 為 `In progress`，再開始工具與編輯。
+0. **Project Environment Setup (專案環境閘門)**：確認專案是否已有 `CONTEXT.md` 或 Tracker Labels。若無，主動提議執行 `context-engineering` 初始化環境。
+1. **未完成任務閘門 (Active State Precedence)**：依 `AGENTS.md` 掃描，若有未完成任務，需先決策繼續或重置。
+2. **Input 收斂閘門 (Input Convergence)**：檢查 Task Card 啟動欄位是否完整；缺漏則標 `Needs input`。
+3. **任務分級閘門 (Task Grading)**：判定 micro / standard / heavy，決定後續追蹤與驗證力度。
+4. **實作啟動閘門 (Execution Gate)**：將任務寫入 plan 或 agent-status (`In progress`) 後，才能開始實作。
 
-若任一步驟不成立，先補齊該步驟，不直接往下執行。
+若任一步驟不成立，先補齊該步驟，不可越級執行 (No Bypassing)。
 
 ## 純資訊查詢 vs 工具序列邊界
 
@@ -38,30 +39,26 @@
 
 固定輸出路徑整理詳見 `.github/harness/harness-workflow-appendix.md`。
 
-## 雙 Workflow 規則（規劃 vs 建置）
+## 雙 Workflow 規則 (Planning vs Execution)
 
-這個 workspace 預設把工作拆成兩段，避免「先規劃、後續失聯」：
+這個 workspace 將工作強制拆分為兩段，防止「先規劃、後續失聯」：
 
-- 規劃 workflow：`analyze-spec` + `design-architecture` + `plan-build`。
-- 建置 workflow：`write-tests` + `tdd-build` 或 `incremental-implementation`，依任務需要搭配 `frontend-ui-engineering`、`browser-testing-with-devtools`、`security-and-hardening`、`code-review-and-quality`。
+- **Planning Workflow**：`analyze-spec` + `design-architecture` + `plan-build`。
+- **Execution Workflow**：`write-tests` + `tdd-build` (嚴格遵循 TDD Guardrails)，搭配 UI/Security 等技能。
 
-進入建置 workflow 前，必須先滿足以下條件：
-
+**[Guardrails] 進入 Execution 前的絕對邊界**：
 - 最新 build plan 或 agent status 已存在。
-- 至少一個任務被標成 `In progress`，並指定下一個可執行切片。
-- 已寫明本輪要更新哪一份活文件（spec / plan / worklog / agent status / launch）。
+- 至少一個任務處於 `In progress`，並有具體可執行的切片 (Slice)。
+- 已明確宣告本輪要更新的活文件 (Source of Truth)。
+若不滿足上述條件，**禁止**直接跳到 coding；必須退回 Planning Workflow 補齊。
 
-若不滿足上述條件，不得直接跳到 coding；先回到規劃 workflow 補齊。
-
-規劃 -> 建置交接：
-交接內容請依 `AGENTS.md` 定義的 Task Card Schema 填寫。
+**Handoff (交接)**：
+規劃到建置的交接，請嚴格遵守 `AGENTS.md` 的 Task Card Schema。
 
 ## 任務 Context 格式
 
-規格與交接請一律使用 `AGENTS.md` 定義的 Task Card Schema 漸進式填寫。
-
-活文件回寫、checkpoint 與恢復順序，以 `AGENTS.md` 與本檔為單一來源（source of truth）。
-任務狀態以 `.github/harness/harness-status-dictionary.md` 為單一來源。
+規格與交接請一律使用漸進式 Task Card 填寫。
+活文件與狀態字典為 **Single Source of Truth (SSOT)**，必須遵循 `.github/harness/harness-status-dictionary.md`。
 
 ### Task Card 兩階段填寫
 
@@ -276,23 +273,25 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 
 宣告完成前，請確認已補齊 `AGENTS.md` 規定的 Task Card Schema 所有欄位。
 
-## 完成定義（DoD）最低門檻
+## 完成定義 (DoD) 最低門檻
 
 若任務未另行定義更高標準，宣告完成前至少要同時滿足以下條件：
 
-1. 任務狀態：active 任務已由 `In progress` 轉為 `Completed`，且時間戳更新。
-2. Task Card：六個欄位已補齊（目標、範圍、驗收標準、更新檔案、驗證證據、阻塞/恢復入口）。
-3. 驗證證據：至少一項與任務類型相符的證據已落地（參照最小驗證矩陣）。
-4. 文件同步：至少同步兩份活文件，其中必含 `.github/worklog/agent-status.md`；另一份為 plan、spec、worklog 或 launch。
-5. 未完成項揭露：若有未執行驗證或延後事項，已明確記錄原因與後續入口。
-6. 審核標記：對於 `standard` 與 `heavy` 任務，必須通過 `cross-model-review` 技能審查，並於活文件中留下通過標記。
+1. **任務狀態**：active 任務轉為 `Completed`，時間戳更新。
+2. **Task Card**：六個欄位已補齊（目標、範圍、驗收標準、更新檔案、驗證證據、阻塞/恢復入口）。
+3. **驗證證據**：至少一項符合任務類型的證據已落地。
+4. **文件同步 (SSOT)**：至少同步兩份活文件，其中必含 `agent-status.md`。
+5. **Continuous Context Update (知識回寫)**：對話期間產生的新知、限制與決策，必須主動更新至 `CONTEXT.md` 或 ADR，嚴禁遺留於 Ephemeral Conversation 中。
+6. **未完成項揭露**：延後事項已記錄原因與後續 Handoff 入口。
+7. **審核標記**：`standard` 與 `heavy` 任務必須有 `cross-model-review` 的通過標記。
 
-### 完成前檢查清單（Quick Check）
+### 完成前檢查清單 (Shutdown Quick Check)
 
 - [ ] active 任務已清空或切為 idle，Last Completed Task 已更新。
 - [ ] plan 與 agent status 的任務狀態一致。
 - [ ] 更新檔案清單可對應實際修改內容。
 - [ ] 驗證證據已寫明結果，不是只有命令名稱。
+- [ ] **Continuous Context Update 檢查**：確認無遺漏的重要架構與限制未回寫 `CONTEXT.md`。
 - [ ] 若有風險或限制，已在阻塞/恢復入口或備註中留下下一步。
 - [ ] diagnostics 無新錯誤，或已記錄例外原因。
 

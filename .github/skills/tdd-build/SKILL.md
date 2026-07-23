@@ -12,129 +12,39 @@ argument-hint: "輸入要實作的任務 ID（如 TASK-001）或任務描述"
 - 準備開始實作某個具體任務（`TASK-XXX`）
 - 需要以 TDD Red-Green-Refactor 循環進行開發
 
-## 核心原則：Red → Green → Refactor
+## 核心原則：Red → Green → Refactor (TDD Loop)
 
-```
-🔴 Red    → 先寫一個會失敗的測試（定義預期行為）
-🟢 Green  → 寫最少量的程式碼讓測試通過
-🔵 Refactor → 重構程式碼（測試仍須通過）
-```
-
-> **鐵律**：在測試通過前，不寫任何非測試的程式碼。
+> **[Guardrails] 絕對行為邊界**：
+> 1. **🔴 Red Phase**：你**絕對不允許**在這個階段寫出任何「非測試」的產品實作代碼。你必須先寫測試，並用終端機執行指令（如 `npm test`）來**證明該測試失敗**。
+> 2. **🟢 Green Phase**：在確認測試失敗前，禁止進入此階段。實作時，只寫能讓測試通過的**最少程式碼** (Minimum Passing Code)，不要超前部署或過度設計 (YAGNI)。
 
 ---
 
 ## 流程步驟
 
-### 第零階段：確認任務範疇
+### 第零階段：確認任務範疇 (Scope Verification)
 
-1. 讀取建置計畫（`docs/plan/build-plan-*.md`），找到指定的 `TASK-XXX`
-2. 確認：
-   - 任務類型（BE / FE / Infra / Test）
-   - 前置任務是否已完成
-   - 對應的 SD 設計（API 規格、Schema、元件定義）
-3. 若前置任務未完成，停止並提醒使用者
+1. 讀取建置計畫（`docs/plan/build-plan-*.md`），定位 `TASK-XXX`。
+2. 驗證 Dependencies (前置任務) 是否皆已完成，並取得對應的 SA/SD (系統分析/設計) 規格。
 
-### 第一階段：環境確認
+### 第一階段：環境確認 (Environment Setup)
 
-1. 確認測試框架已安裝（依技術棧，參考 [測試框架設定](./references/test-setup-guide.md)）
-2. 確認可以執行測試指令：
-   - 後端：`npm test` / `pnpm test`
-   - 前端：`npm test` / `vitest`
-   - E2E：`playwright test`
-3. 確認測試目錄結構是否存在
+確認測試框架與指令（依據技術棧：`npm test`, `vitest`, `playwright test` 等）。
 
 ### 第二階段：🔴 Red — 撰寫失敗測試
 
-依任務類型選擇對應的測試策略：
+依任務類型選定測試策略：
+- **Backend API**：撰寫 Integration Test (整合測試)，Mock 外部依賴，測試 Request/Response 合約與 HTTP Status Codes。
+- **Business Logic**：撰寫 Unit Test (單元測試)，驗證 Edge Cases 與錯誤處理。
+- **Frontend Component**：撰寫 Component Test (元件測試，如 Testing Library)，驗證 DOM 行為與 User Events。
 
-**後端 API 任務** → Integration Test（使用真實資料庫或 in-memory DB）：
-
-```typescript
-// 範例：tests/integration/auth.test.ts
-describe("POST /auth/login", () => {
-	it("應在憑證正確時回傳 access token", async () => {
-		// Arrange
-		await createUser({email: "test@example.com", password: "password123"})
-
-		// Act
-		const res = await request(app).post("/api/v1/auth/login").send({email: "test@example.com", password: "password123"})
-
-		// Assert
-		expect(res.status).toBe(200)
-		expect(res.body.data).toHaveProperty("access_token")
-		expect(res.body.data.token_type).toBe("Bearer")
-	})
-
-	it("應在憑證錯誤時回傳 401", async () => {
-		const res = await request(app).post("/api/v1/auth/login").send({email: "test@example.com", password: "wrong"})
-
-		expect(res.status).toBe(401)
-		expect(res.body.error.code).toBe("INVALID_CREDENTIALS")
-	})
-})
-```
-
-**業務邏輯任務** → Unit Test（隔離外部相依）：
-
-```typescript
-// 範例：tests/unit/auth.service.test.ts
-describe("AuthService.login", () => {
-	it("應驗證密碼並回傳 token", async () => {
-		const mockUser = {id: 1, email: "test@example.com", passwordHash: await hash("password123")}
-		mockUserRepo.findByEmail.mockResolvedValue(mockUser)
-
-		const result = await authService.login("test@example.com", "password123")
-
-		expect(result.accessToken).toBeDefined()
-		expect(mockUserRepo.findByEmail).toHaveBeenCalledWith("test@example.com")
-	})
-})
-```
-
-**前端元件任務** → Component Test（使用 Testing Library）：
-
-```typescript
-// 範例：src/components/LoginForm.test.tsx
-describe('LoginForm', () => {
-  it('應在送出時呼叫 onSubmit 並傳入表單值', async () => {
-    const mockOnSubmit = vi.fn()
-    render(<LoginForm onSubmit={mockOnSubmit} />)
-
-    await userEvent.type(screen.getByLabelText('電子郵件'), 'test@example.com')
-    await userEvent.type(screen.getByLabelText('密碼'), 'password123')
-    await userEvent.click(screen.getByRole('button', { name: '登入' }))
-
-    expect(mockOnSubmit).toHaveBeenCalledWith({
-      email: 'test@example.com',
-      password: 'password123'
-    })
-  })
-
-  it('應在 email 格式錯誤時顯示錯誤訊息', async () => {
-    render(<LoginForm onSubmit={vi.fn()} />)
-
-    await userEvent.type(screen.getByLabelText('電子郵件'), 'not-an-email')
-    await userEvent.click(screen.getByRole('button', { name: '登入' }))
-
-    expect(screen.getByText('請輸入有效的電子郵件')).toBeInTheDocument()
-  })
-})
-```
-
-**執行測試，確認測試失敗（🔴 Red）**
+**執行測試指令，並確保終端機輸出包含明確的失敗 (Failed) 訊息。**若無失敗，代表測試無效。
 
 ### 第三階段：🟢 Green — 最小實作
 
-1. 以 SD 文件為規格，實作最小可通過測試的程式碼
-2. 遵循以下安全規範（詳見 [安全實作守則](./references/security-checklist.md)）：
-   - 所有輸入必須經過 Schema 驗證（Zod / Joi）
-   - SQL 必須使用參數化查詢
-   - 密碼使用 bcrypt hash，不儲存明文
-   - 錯誤訊息不洩漏系統內部資訊
-3. **只寫讓測試通過所需的最少程式碼，不要超前實作**
-
-**執行測試，確認全部通過（🟢 Green）**
+1. 依照 SD 規格，實作 Minimum Passing Code。
+2. 嚴格遵守 Security Best Practices (如 Parameterized SQL 預防 Injection, Zod/Joi 執行 Schema Validation, 不留存明文密碼)。
+3. **執行測試，確認狀態翻轉為 🟢 Green (All Tests Passed)。**
 
 ### 第四階段：🔵 Refactor — 重構
 

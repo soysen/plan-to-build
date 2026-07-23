@@ -35,11 +35,19 @@ user-invocable: true
 └─────────────────────────────────────┘
 ```
 
+## Phase 0：專案 Agent 環境初始化 (Project Environment Setup)
+
+這是最高優先級的 Setup 流程，確保 Agent 後續的所有操作都具備完整的 Context 基底與基礎建設連接。當使用者要求「為這個專案設定 Agent 環境」時，執行以下動作：
+
+1. **Initialize `CONTEXT.md`**：在專案根目錄或 `docs/` 下建立此檔案，記錄核心 Business Logic、Architecture Decisions 與 Tech Stack。
+2. **Issue Tracker Integration**：確認專案使用何種任務追蹤工具（GitHub Issues, Linear, Jira 或本地 Markdown Tracker）。建立或確認標準化 Labels（如 `backend`, `frontend`, `priority:high`, `blocked`）。
+3. **Workspace State Setup**：初始化 `.github/worklog/agent-status.md` 來追蹤 Active Task (當前活躍任務)，作為後續 Handoff (交接) 基礎。
+
 ---
 
-## Phase 1：建立 Rules 檔案
+## Phase 1：建立 Rules 檔案 (Global Constraints)
 
-這是你能提供的最高槓桿 Context。
+這是你能提供的最高槓桿 Context (High-Leverage Context)。
 
 ### GitHub Copilot：`.github/copilot-instructions.md`
 

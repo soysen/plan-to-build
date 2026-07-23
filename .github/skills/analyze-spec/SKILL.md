@@ -4,14 +4,18 @@ description: "分析專案需求並開立規格文件。語意情境：當使用
 argument-hint: "輸入初始需求描述或貼上需求草稿"
 ---
 
-# 分析 Spec 並開立規格文件
+## 核心原則與行為邊界
 
-## 使用時機
+> **[Guardrails] 絕對行為邊界**：
+> 1. **Anti-Scope-Creep (禁止範疇蔓延)**：嚴禁 Agent 擅自添加使用者未要求的「額外功能」或「加值設計」。需求分析必須精準防守範疇。
+> 2. **Explicit Non-Goals Mandatory (非目標防護槓桿)**：規格書中的「非目標 (Non-goals / Out-of-Scope)」定義必須與「目標 (Goals)」同等清晰與嚴謹。未明確定義 Non-goals 前**不得結案**。
+> 3. **No Silent Selection on Conflicts (衝突公開)**：遭遇利害關係人需求衝突或技術矛盾時，**嚴禁** Agent 靜默自行挑選。必須將 Choice Vector 與 Trade-offs 列出供 Decider (決策者) 拍板。
 
-- 收到模糊的功能需求或客戶描述，需要釐清並結構化
-- 需要產出正式的規格書（Spec / PRD / RFC）
-- 評估需求可行性並識別潛在風險與盲點
-- 準備開始開發前的需求對齊
+## 適用時機
+
+- 收到模糊的需求描述或草稿，需要結構化為正式規格 (PRD / RFC / Spec)
+- 需要評估需求可行性 (Technical Feasibility) 並識別潛在風險 (Risk Mitigation)
+- 開發前的團隊/利益關係人對齊 (Stakeholder Alignment)
 
 若目前還不確定問題是否真實、目標使用者是否成立、或替代方案是否足夠差，先改用 `problem-validation`，不要把未驗證假設直接寫成 spec。
 

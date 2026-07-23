@@ -216,14 +216,17 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
 
 ---
 
-## 為 AI Agent 撰寫文件
+## Continuous Context Update (持續回寫知識庫)
 
-AI Agent 在有好文件的情況下工作得更好：
+> **[Guardrails] 絕對行為邊界**：
+> 當在對話中發生了架構決策變更、發現了新的 Constraints (限制)、或釐清了原本模糊的規格時，Agent **必須主動提議**將這些新知識回寫到 `CONTEXT.md` 或對應的 ADR。絕不能讓知識只留在對話歷史中 (Conversation History is Ephemeral)。
 
-- **Rules 檔案（`.github/copilot-instructions.md`）** — 記錄專案慣例，讓 Agent 遵循
-- **Spec 檔案** — 保持 spec 更新，讓 Agent 建置正確的東西
-- **ADR** — 幫助 Agent 理解過去決策的原因（防止 re-deciding）
-- **陷阱注解** — 防止 Agent 掉入已知的坑
+AI Agent 在有高密度 Context 的情況下工作得更好：
+
+- **Global Constraints (Rules 檔案)** — 確保 Agent 遵循專案專屬慣例。
+- **Spec & Context** — 隨時保持 `CONTEXT.md` 或 Spec 文件最新，以供跨工作階段 (Cross-session) 的 Agent 繼承上下文。
+- **ADR (架構決策紀錄)** — 幫助 Agent 理解決策脈絡，防止重複決策 (Prevent Re-deciding Loops)。
+- **Trap Annotations (就地陷阱註解)** — Inline comment 說明，防止後續 AI 掉入已知坑中。
 
 ---
 

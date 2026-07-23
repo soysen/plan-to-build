@@ -62,10 +62,11 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 若任務在執行中升級，立即調升級別並補齊對應活文件。
 
-### 4. 實作啟動閘門
+### 4. 實作啟動閘門 (Execution Gate)
 
 分級確認後，先更新活文件，再執行任何讀檔、搜尋、命令、編輯或驗證。不論任務屬於哪個級別，啟動時都必須在對話或文件中明確輸出所選擇的 Skill Route。
 
+- **Project Environment Setup (環境與上下文確認)**：啟動前必須掃描是否具備足夠的專案 Context（如 `CONTEXT.md` 或 Tracker Labels）。若缺乏，應主動建議執行 `context-engineering` 初始化環境。
 - `micro`：更新 `.github/worklog/agent-status.md` 為 `進行中`，記錄一行目的描述與使用的 Skill Route 即可。
 - `standard / heavy`：同時完成：
   - 在 `.github/harness/plan/{feature-name}-build-plan.md` 建立或更新本輪切片，並填寫 Skill Route。
@@ -128,7 +129,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - 不發明工具或 API：不確定時先搜尋 repo、讀文件或讀官方來源。
 - 不執行不可逆操作：未取得使用者明確同意前，不做 `git push`、部署、生產資料修改、大範圍刪除。
 
-## 完成前檢查
+## 完成前檢查 (DoD & Shutdown Checklist)
 
 宣告完成前必須確認：
 
@@ -136,8 +137,9 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - 變更檔案符合本輪範圍。
 - 驗證證據已回寫；若未執行驗證，已寫明原因。
 - `.github/worklog/agent-status.md` 已更新；`standard / heavy` 任務的 build plan 也已同步。
-- `Active Task` 已結束或提供清楚恢復入口。
+- `Active Task` 已結束或提供清楚恢復入口 (Handoff Point)。
 - `standard` 任務已完成輕量 retro；`heavy` 任務已完成完整 retro。
+- **Continuous Context Update (知識回寫)**：自我檢查對話過程中是否有新增的架構決策、限制或邊界情境。若有，強制要求更新 `CONTEXT.md` 或對應 ADR，絕不允許將知識遺留在對話歷史中。
 - **Stop Hook 守門員**：對於 `standard` 與 `heavy` 任務，檢查 Task Card 或 agent status 的尾端是否有明確的 `> [!CHECK] Cross-Model Review Approved by [Model/Role Name]` 標記。若無，強制攔截任務結案，並先執行 `cross-model-review` skill。
 
 ## 溝通規範
