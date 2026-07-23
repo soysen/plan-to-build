@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="電商級行動通訊資費比較計算器，幫助你快速依上網用量、通話時間與簡訊，估算出中華電信、遠傳、台灣大哥大等各大方案的最划算組合。" />
+    <title>資費方案智能比較計算器 | Telecom Tariff Plan Calculator</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app" class="app-layout">
+      <!-- 頁首與全域控制區 -->
+      <header class="app-header">
+        <div class="header-content">
+          <h1>資費方案智能比較計算器</h1>
+          <p class="subtitle">依據個人真實用量，一鍵算出最划算的行動方案，避開隱形超額黑洞！</p>
+        </div>
+        
+        <!-- 綁約折扣控制區 -->
+        <div class="discount-control">
+          <label class="switch-container" for="contract-toggle">
+            <span class="switch-label">✨ 勾選綁約 24 個月 (月租再打 9 折)</span>
+            <span class="switch-wrapper">
+              <input type="checkbox" id="contract-toggle" class="switch-input" aria-label="綁約 24 個月折扣" />
+              <span class="switch-slider"></span>
+            </span>
+          </label>
+        </div>
+      </header>
+
+      <!-- 主體計算機區 -->
+      <main class="main-content">
+        <!-- 側邊：用量輸入調整區 -->
+        <section class="control-panel" aria-labelledby="control-heading">
+          <h2 id="control-heading" class="sr-only">每月預估用量輸入區</h2>
+          
+          <div class="control-header">
+            <h3>📊 請輸入你的預估用量</h3>
+            <p>拖曳滑桿即時重新計算各方案實付金額</p>
+          </div>
+
+          <div class="sliders-list">
+            <!-- 數據滑桿組 -->
+            <div class="slider-group">
+              <div class="slider-info">
+                <label for="input-data" id="label-data">📶 行動數據量</label>
+                <span class="slider-value" id="value-data" aria-live="polite">20 GB</span>
+              </div>
+              <input 
+                type="range" 
+                id="input-data" 
+                min="0" 
+                max="200" 
+                value="20" 
+                step="1"
+                aria-labelledby="label-data" 
+                aria-valuemin="0" 
+                aria-valuemax="200" 
+                aria-valuenow="20"
+              />
+              <div class="slider-ticks">
+                <span>0 GB</span>
+                <span>50 GB</span>
+                <span>100 GB</span>
+                <span>200 GB</span>
+              </div>
+            </div>
+
+            <!-- 通話時間滑桿組 -->
+            <div class="slider-group">
+              <div class="slider-info">
+                <label for="input-voice" id="label-voice">📞 語音通話時間</label>
+                <span class="slider-value" id="value-voice" aria-live="polite">45 分鐘</span>
+              </div>
+              <input 
+                type="range" 
+                id="input-voice" 
+                min="0" 
+                max="300" 
+                value="45" 
+                step="5"
+                aria-labelledby="label-voice" 
+                aria-valuemin="0" 
+                aria-valuemax="300" 
+                aria-valuenow="45"
+              />
+              <div class="slider-ticks">
+                <span>0 分鐘</span>
+                <span>100 分鐘</span>
+                <span>200 分鐘</span>
+                <span>300 分鐘</span>
+              </div>
+            </div>
+
+            <!-- 簡訊則數滑桿組 -->
+            <div class="slider-group">
+              <div class="slider-info">
+                <label for="input-sms" id="label-sms">💬 簡訊傳送則數</label>
+                <span class="slider-value" id="value-sms" aria-live="polite">15 則</span>
+              </div>
+              <input 
+                type="range" 
+                id="input-sms" 
+                min="0" 
+                max="100" 
+                value="15" 
+                step="1"
+                aria-labelledby="label-sms" 
+                aria-valuemin="0" 
+                aria-valuemax="100" 
+                aria-valuenow="15"
+              />
+              <div class="slider-ticks">
+                <span>0 則</span>
+                <span>50 則</span>
+                <span>100 則</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右邊：資費卡片列表區 -->
+        <section class="plans-panel" aria-labelledby="plans-heading">
+          <h2 id="plans-heading" class="sr-only">資費方案費用估算</h2>
+          
+          <div class="plans-header">
+            <h3>🏆 推薦與費用估算</h3>
+            <p>點選方案底部的「加入對比」可展開側邊比對表格</p>
+          </div>
+
+          <!-- 卡片容器，將在 TypeScript 中動態生成 -->
+          <div id="plan-list" class="plan-list"></div>
+        </section>
+      </main>
+
+      <!-- 底部：側邊對比表格區 -->
+      <section class="comparison-panel" id="comparison-panel" aria-labelledby="comparison-heading" style="display: none;">
+        <div class="comparison-header">
+          <h2 id="comparison-heading">🔍 選中資費方案規格對比</h2>
+          <p>比較詳細的內含項目與額外費率差異</p>
+        </div>
+        
+        <!-- 比對表格，將在 TypeScript 中動態生成 -->
+        <div id="comparison-table-container" class="table-container"></div>
+      </section>
+
+      <!-- 頁尾 -->
+      <footer class="app-footer">
+        <p>© 2026 電商級資費智能計算平台. All Rights Reserved. (本練習符合 INP &lt; 100ms / LCP &lt; 1.2s 效能標準)</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

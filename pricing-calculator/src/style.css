@@ -1,0 +1,761 @@
+/* ==========================================================================
+   1. 設計系統變數 & 全域初始化 (Design System & Global Resets)
+   ========================================================================== */
+
+:root {
+	/* 字型定義 */
+	--font-primary: "Inter", system-ui, -apple-system, sans-serif;
+	--font-display: "Outfit", var(--font-primary);
+
+	/* 主題色彩 (HSL 調和配色) */
+	--hue-base: 232;
+	--bg-app: radial-gradient(circle at top, #181b34 0%, #0a0b14 100%);
+	--color-text-main: #f3f4f6;
+	--color-text-muted: #9ca3af;
+
+	/* 品牌色 */
+	--color-primary: #6366f1; /* 靛藍 Indigo */
+	--color-primary-rgb: 99, 102, 241;
+	--color-accent: #a855f7; /* 亮紫 Purple */
+	--color-accent-rgb: 168, 85, 247;
+	--color-success: #10b981; /* 綠色 Success */
+	--color-success-rgb: 16, 185, 129;
+	--color-danger: #ef4444; /* 紅色 Danger */
+
+	/* 磨砂玻璃 (Glassmorphism) */
+	--glass-bg: rgba(255, 255, 255, 0.02);
+	--glass-border: rgba(255, 255, 255, 0.06);
+	--glass-blur: blur(16px);
+	--glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+	/* 動態微轉場 */
+	--transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-fast: all 0.15s ease;
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: var(--font-primary);
+	background: var(--bg-app);
+	color: var(--color-text-main);
+	min-height: 100vh;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden;
+}
+
+/* 鍵盤無障礙 Focus 狀態 */
+*:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 4px;
+}
+
+/* 隱形但對螢幕閱讀器友善的 Utility (Screen Reader Only) */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ==========================================================================
+   2. 主版面配置 (App Layout)
+   ========================================================================== */
+
+.app-layout {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 2rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+/* ==========================================================================
+   3. 頁首與綁約切換 (Header & Discount Toggle)
+   ========================================================================== */
+
+.app-header {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	padding-bottom: 1.5rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 768px) {
+	.app-header {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+}
+
+.header-content h1 {
+	font-family: var(--font-display);
+	font-size: clamp(1.8rem, 4vw, 2.5rem);
+	font-weight: 700;
+	background: linear-gradient(135deg, #ffffff 40%, #c084fc 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	margin-bottom: 0.5rem;
+}
+
+.header-content .subtitle {
+	color: var(--color-text-muted);
+	font-size: clamp(0.9rem, 2vw, 1.05rem);
+}
+
+/* 綁約開關 Switch 樣式 */
+.switch-container {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	cursor: pointer;
+	padding: 0.75rem 1.2rem;
+	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid var(--glass-border);
+	border-radius: 50px;
+	backdrop-filter: var(--glass-blur);
+	transition: var(--transition-fast);
+}
+
+.switch-container:hover {
+	background: rgba(255, 255, 255, 0.05);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+.switch-label {
+	font-weight: 500;
+	font-size: 0.95rem;
+	color: #fff;
+}
+
+.switch-wrapper {
+	position: relative;
+	display: inline-block;
+	width: 48px;
+	height: 24px;
+}
+
+.switch-input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.switch-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(255, 255, 255, 0.15);
+	transition: 0.3s;
+	border-radius: 34px;
+}
+
+.switch-slider:before {
+	position: absolute;
+	content: "";
+	height: 18px;
+	width: 18px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.3s;
+	border-radius: 50%;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.switch-input:checked + .switch-slider {
+	background-color: var(--color-primary);
+}
+
+.switch-input:checked + .switch-slider:before {
+	transform: translateX(24px);
+}
+
+/* ==========================================================================
+   4. 計算機主區排版 (Main Calculator Section)
+   ========================================================================== */
+
+.main-content {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2rem;
+}
+
+@media (min-width: 992px) {
+	.main-content {
+		grid-template-columns: 380px 1fr;
+	}
+}
+
+/* ==========================================================================
+   5. 用量輸入控制台 (Control Panel & Range Sliders)
+   ========================================================================== */
+
+.control-panel {
+	background: var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	border-radius: 24px;
+	padding: 1.8rem;
+	backdrop-filter: var(--glass-blur);
+	box-shadow: var(--glass-shadow);
+	height: fit-content;
+}
+
+.control-header {
+	margin-bottom: 2rem;
+}
+
+.control-header h3 {
+	font-family: var(--font-display);
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin-bottom: 0.25rem;
+}
+
+.control-header p {
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+}
+
+.sliders-list {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+.slider-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.slider-info {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.slider-info label {
+	font-weight: 500;
+	font-size: 0.95rem;
+}
+
+.slider-value {
+	font-family: var(--font-display);
+	font-weight: 700;
+	font-size: 1.15rem;
+	color: var(--color-accent);
+	background: rgba(168, 85, 247, 0.1);
+	padding: 0.2rem 0.6rem;
+	border-radius: 8px;
+	border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* 自訂 HTML5 Range Slider 軌道與 Thumb 樣式 */
+input[type="range"] {
+	-webkit-appearance: none;
+	width: 100%;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 5px;
+	outline: none;
+	cursor: pointer;
+	transition: background 0.3s;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #fff;
+	border: 2px solid var(--color-accent);
+	box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+	cursor: pointer;
+	transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+	transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #fff;
+	border: 2px solid var(--color-accent);
+	box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+	cursor: pointer;
+	transition: transform 0.1s;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+	transform: scale(1.2);
+}
+
+.slider-ticks {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   6. 資費卡片列表區 (Tariff Plans Cards & Container Queries)
+   ========================================================================== */
+
+.plans-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.plans-header h3 {
+	font-family: var(--font-display);
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin-bottom: 0.25rem;
+}
+
+.plans-header p {
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+}
+
+.plan-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	min-height: 960px;
+}
+
+/* 宣告容器查詢基準點 (Container Query Context) */
+.plan-card-wrapper {
+	container-type: inline-size;
+	container-name: plan-card;
+	width: 100%;
+}
+
+/* 方案卡片本體 (Glassmorphism 磨砂質感) */
+.plan-card {
+	background: var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	border-radius: 20px;
+	padding: 1.5rem;
+	position: relative;
+	display: flex;
+	min-height: 430px;
+	flex-direction: column;
+	gap: 1.2rem;
+	backdrop-filter: var(--glass-blur);
+	box-shadow: var(--glass-shadow);
+	transition: var(--transition-smooth);
+	overflow: hidden;
+}
+
+/* 最划算標籤裝飾線 */
+.plan-card::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: transparent;
+	transition: var(--transition-fast);
+}
+
+/* 當卡片被標示為「最划算推薦」時 */
+.plan-card.recommended {
+	border-color: rgba(16, 185, 129, 0.4);
+	background: rgba(16, 185, 129, 0.03);
+}
+
+.plan-card.recommended::after {
+	background: linear-gradient(90deg, var(--color-success) 0%, #34d399 100%);
+}
+
+.recommend-badge {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	background: linear-gradient(135deg, var(--color-success) 0%, #34d399 100%);
+	color: #0b0d19;
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 0.25rem 0.6rem;
+	border-radius: 50px;
+	box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+/* 卡片排版結構 */
+.plan-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 1rem;
+}
+
+.plan-title-area {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.plan-title-area h4 {
+	font-family: var(--font-display);
+	font-size: 1.15rem;
+	font-weight: 600;
+}
+
+.network-badge {
+	font-size: 0.7rem;
+	font-weight: 700;
+	padding: 0.15rem 0.5rem;
+	border-radius: 4px;
+	width: fit-content;
+}
+
+.network-badge.net-4g {
+	background: rgba(255, 255, 255, 0.1);
+	color: var(--color-text-main);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.network-badge.net-5g {
+	background: rgba(99, 102, 241, 0.15);
+	color: #818cf8;
+	border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.price-block {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.price-tag {
+	font-family: var(--font-display);
+	font-weight: 700;
+	font-size: 1.6rem;
+	color: #fff;
+}
+
+.price-tag::before {
+	content: "NT$ ";
+	font-size: 1rem;
+	font-weight: 500;
+}
+
+.price-period {
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+.plan-features-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	list-style: none;
+}
+
+.plan-features-list li {
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.plan-features-list li::before {
+	content: "✦";
+	color: var(--color-primary);
+	font-size: 0.9rem;
+}
+
+/* 超額費用明細區 (CSS :has 控制顯示隱藏) */
+.plan-breakdown {
+	border-top: 1px dashed rgba(255, 255, 255, 0.08);
+	padding-top: 0.8rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	font-size: 0.8rem;
+	color: var(--color-text-muted);
+}
+
+.breakdown-row {
+	display: flex;
+	justify-content: space-between;
+}
+
+.breakdown-row.total-row {
+	font-weight: 600;
+	color: #fff;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	padding-top: 0.4rem;
+	margin-top: 0.2rem;
+}
+
+.breakdown-row .price-val {
+	font-family: var(--font-display);
+	color: #fff;
+}
+
+.breakdown-row .price-val.free {
+	color: var(--color-success);
+}
+
+/* 降速警告提示 */
+.throttle-warning {
+	margin-top: 0.4rem;
+	background: rgba(239, 68, 68, 0.1);
+	border: 1px solid rgba(239, 68, 68, 0.2);
+	color: #fca5a5;
+	padding: 0.4rem 0.8rem;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+/* 卡片操作區 */
+.plan-card-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	padding-top: 1rem;
+}
+
+.compare-label {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.85rem;
+	cursor: pointer;
+	color: var(--color-text-muted);
+	user-select: none;
+	transition: var(--transition-fast);
+}
+
+.compare-label:hover {
+	color: #fff;
+}
+
+/* 自訂 Checkbox 視覺 */
+.custom-checkbox {
+	width: 18px;
+	height: 18px;
+	border: 1.5px solid rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	display: inline-block;
+	position: relative;
+	transition: var(--transition-fast);
+}
+
+input[type="checkbox"]:checked + .custom-checkbox {
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+input[type="checkbox"]:checked + .custom-checkbox::after {
+	content: "";
+	position: absolute;
+	left: 5px;
+	top: 1px;
+	width: 5px;
+	height: 10px;
+	border: solid white;
+	border-width: 0 2px 2px 0;
+	transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   7. CSS Container Queries (容器查詢排版轉換)
+   ========================================================================== */
+
+/* 當卡片容器寬度大於 520px 時，自動轉換為兩欄式響應式橫排 */
+@container plan-card (min-width: 520px) {
+	.plan-card {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: auto auto;
+		gap: 1rem;
+		min-height: 320px;
+		padding: 1.8rem;
+	}
+
+	.plan-card-header {
+		grid-column: 1 / 3;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+		padding-bottom: 0.8rem;
+	}
+
+	.plan-features-list {
+		grid-column: 1 / 2;
+		grid-row: 2 / 3;
+	}
+
+	.plan-right-pane {
+		grid-column: 2 / 3;
+		grid-row: 2 / 3;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.plan-breakdown {
+		border-top: none;
+		padding-top: 0;
+	}
+
+	.plan-card-actions {
+		border-top: 1px solid rgba(255, 255, 255, 0.04);
+		grid-column: 1 / 3;
+		grid-row: 3 / 4;
+	}
+}
+
+/* ==========================================================================
+   8. CSS `:has()` 選擇器狀態聯動 (No-JS State Interactions)
+   ========================================================================== */
+
+/* 1. 當列表內有任何一個方案卡片的 checkbox 被選中時 */
+.plan-list:has(.plan-checkbox:checked) .plan-card:not(:has(.plan-checkbox:checked)) {
+	opacity: 0.5;
+	filter: grayscale(30%) blur(0.2px);
+}
+
+/* 2. 當特定卡片的 checkbox 被選中時，自身高亮 */
+.plan-card:has(.plan-checkbox:checked) {
+	border-color: var(--color-primary);
+	background: rgba(99, 102, 241, 0.06);
+	box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+	transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   9. 比對表格區 (Comparison Table Panel)
+   ========================================================================== */
+
+.comparison-panel {
+	background: var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	border-radius: 24px;
+	padding: 1.8rem;
+	backdrop-filter: var(--glass-blur);
+	box-shadow: var(--glass-shadow);
+	animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	margin-top: 1rem;
+}
+
+.comparison-header {
+	margin-bottom: 1.5rem;
+}
+
+.comparison-header h2 {
+	font-family: var(--font-display);
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #fff;
+	margin-bottom: 0.25rem;
+}
+
+.comparison-header p {
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+}
+
+/* 響應式 Table 設計 */
+.table-container {
+	width: 100%;
+	overflow-x: auto;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.comparison-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+	font-size: 0.9rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+	padding: 1rem 1.2rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.comparison-table th {
+	background: rgba(255, 255, 255, 0.03);
+	font-weight: 600;
+	color: #fff;
+}
+
+.comparison-table td.plan-col-header {
+	font-weight: 600;
+	color: var(--color-primary);
+	background: rgba(99, 102, 241, 0.02);
+}
+
+.comparison-table tr:hover {
+	background: rgba(255, 255, 255, 0.01);
+}
+
+.comparison-table tr:last-child th,
+.comparison-table tr:last-child td {
+	border-bottom: none;
+}
+
+.table-price-highlight {
+	font-family: var(--font-display);
+	font-weight: 700;
+	color: #fff;
+	font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   10. 頁尾與動畫定義 (Footer & Keyframe Animations)
+   ========================================================================== */
+
+.app-footer {
+	text-align: center;
+	padding: 2rem 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	color: var(--color-text-muted);
+	font-size: 0.8rem;
+	margin-top: 2rem;
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
