@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5G 優先通行方案 UI/UX 設計可視化 Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0B0F17;
+      --bg-card: #151C28;
+      --bg-card-hover: #1C2636;
+      --bg-inner: #0F141E;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      
+      --primary: #6366F1;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      
+      --status-active: #10B981;
+      --status-active-bg: rgba(16, 185, 129, 0.12);
+      --status-active-border: rgba(16, 185, 129, 0.3);
+      
+      --status-upcoming: #3B82F6;
+      --status-upcoming-bg: rgba(59, 130, 246, 0.12);
+      --status-upcoming-border: rgba(59, 130, 246, 0.3);
+      
+      --status-expired: #9CA3AF;
+      --status-expired-bg: rgba(156, 163, 175, 0.08);
+      --status-expired-border: rgba(156, 163, 175, 0.2);
+
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --text-sub: #D1D5DB;
+
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      padding: 30px 16px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .page-title span {
+      background: linear-gradient(135deg, #818CF8, #C084FC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .designer-note {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    .designer-note strong {
+      color: #A5B4FC;
+    }
+
+    /* View Switcher */
+    .view-switcher {
+      display: flex;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .switch-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .switch-btn.active {
+      background: var(--primary);
+      color: #FFF;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    /* Accordion Group Card */
+    .group-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .group-card:hover {
+      border-color: var(--border-accent);
+    }
+
+    /* Accordion Header (Summary Bar) */
+    .group-header {
+      padding: 18px 20px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      user-select: none;
+      background: linear-gradient(180deg, var(--bg-card) 0%, rgba(21, 28, 40, 0.7) 100%);
+      transition: background 0.2s ease;
+    }
+
+    .group-header:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .group-identity {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .group-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border: 1px solid var(--border-color);
+    }
+
+    .group-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .expand-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+
+    .chevron-icon {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .group-card.open .chevron-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Total Summary Metrics Row */
+    .summary-metrics {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: var(--bg-inner);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .metric-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .metric-pill.main {
+      color: #818CF8;
+    }
+
+    .metric-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--border-color);
+    }
+
+    .metric-pill.sub {
+      color: var(--text-sub);
+      font-weight: 500;
+      font-size: 12px;
+    }
+
+    /* Group Content / Detail Items List */
+    .group-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      border-top: 1px solid transparent;
+    }
+
+    .group-card.open .group-content {
+      max-height: 1200px;
+      border-top-color: var(--border-color);
+    }
+
+    .items-container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg-inner);
+    }
+
+    /* Individual Item Card Architecture */
+    .item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .item-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .item-card.is-active {
+      border-color: var(--status-active-border);
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.08);
+    }
+
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .item-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .status-badge.active {
+      background: var(--status-active-bg);
+      color: var(--status-active);
+      border: 1px solid var(--status-active-border);
+    }
+
+    .status-badge.upcoming {
+      background: var(--status-upcoming-bg);
+      color: var(--status-upcoming);
+      border: 1px solid var(--status-upcoming-border);
+    }
+
+    .status-badge.expired {
+      background: var(--status-expired-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--status-expired-border);
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .item-details {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .detail-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-icon {
+      color: var(--text-muted);
+      font-size: 13px;
+      width: 14px;
+      text-align: center;
+    }
+
+    /* Progress bar for Annual Pass */
+    .progress-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366F1, #10B981);
+      border-radius: 3px;
+    }
+
+    .item-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border-color);
+      margin-top: 2px;
+    }
+
+    .item-price {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .item-price strong {
+      color: var(--text-main);
+      font-size: 14px;
+    }
+
+    .action-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .action-btn.primary {
+      background: var(--status-active);
+      color: #000;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .action-btn.primary:hover {
+      filter: brightness(1.1);
+      transform: scale(1.02);
+    }
+
+    .action-btn.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-sub);
+    }
+
+    .action-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1 class="page-title">⚡ <span>5G 優先通行方案</span></h1>
+    <span style="font-size: 12px; color: var(--text-muted);">UI Mockup v1.0</span>
+  </header>
+
+  <!-- Designer Context Note -->
+  <div class="designer-note">
+    💡 <strong>給設計師的模組化呈現說明：</strong><br>
+    將方案分為「年包通行」與「場館通行」兩大 Accordion 群組。收合時顯示 Total 統計數字；展開後可查看每一筆購買紀錄細節與專屬狀態（已預約 / 使用中 / 已結束）。
+  </div>
+
+  <!-- View Mode Switcher -->
+  <div class="view-switcher">
+    <button class="switch-btn active" onclick="setViewMode('smart')">智慧折疊視角 (推薦)</button>
+    <button class="switch-btn" onclick="setViewMode('expand')">全展開條列視角</button>
+  </div>
+
+  <!-- GROUP 1: ANNUAL PASSES (年包通行) -->
+  <div class="group-card open" id="group-annual">
+    <div class="group-header" onclick="toggleGroup('group-annual')">
+      <div class="header-top">
+        <div class="group-identity">
+          <div class="group-icon">📦</div>
+          <div class="group-name">5G 全年優先通行包</div>
+        </div>
+        <div class="expand-toggle">
+          <span class="toggle-text">點擊收合</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+      </div>
+
+      <!-- Total Summary Metrics Bar -->
+      <div class="summary-metrics">
+        <div class="metric-pill main">
+          <span>📊 總剩餘額度：12 次</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-pill sub">
+          <span>2 份方案 (🟢 1 份使用中 · 🔵 1 份預約中)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="group-content">
+      <div class="items-container">
+
+        <!-- Item 1: Active Annual Pass -->
+        <div class="item-card is-active">
+          <div class="item-top">
+            <div class="item-title">2026 年度通行包 A款</div>
+            <div class="status-badge active">
+              <span class="pulse-dot"></span> 使用中
+            </div>
+          </div>
+
+          <div class="item-details">
+            <div class="detail-row">
+              <span class="detail-icon">📅</span>
+              <span>開始與結束日期：2026/01/01 - 2026/12/31</span>
+            </div>
+            
+            <div class="progress-wrap">
+              <div class="progress-header">
+                <span>使用進度 (已用 3 次 / 可用 10 次)</span>
+                <span style="color: var(--status-active); font-weight: 700;">剩餘 7 次</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 30%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="item-bottom">
+            <div class="item-price">年包價格: <strong>$9,900</strong></div>
+            <button class="action-btn primary">出示通行 QR 碼</button>
+          </div>
+        </div>
+
+        <!-- Item 2: Upcoming Annual Pass -->
+        <div class="item-card">
+          <div class="item-top">
+            <div class="item-title">2027 早鳥通行包 B款</div>
+            <div class="status-badge upcoming">
+              已預約
+            </div>
+          </div>
+
+          <div class="item-details">
+            <div class="detail-row">
+              <span class="detail-icon">📅</span>
+              <span>開始與結束日期：2027/01/01 - 2027/12/31</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">🔢</span>
+              <span>可用總次數：5 次 (未開始使用)</span>
+            </div>
+          </div>
+
+          <div class="item-bottom">
+            <div class="item-price">年包價格: <strong>$4,999</strong></div>
+            <button class="action-btn secondary">預約詳情</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- GROUP 2: VENUE PASSES (場館通行) -->
+  <div class="group-card open" id="group-venue">
+    <div class="group-header" onclick="toggleGroup('group-venue')">
+      <div class="header-top">
+        <div class="group-identity">
+          <div class="group-icon">🏛️</div>
+          <div class="group-name">5G 場館優先通行</div>
+        </div>
+        <div class="expand-toggle">
+          <span class="toggle-text">點擊收合</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+      </div>
+
+      <!-- Total Summary Metrics Bar -->
+      <div class="summary-metrics">
+        <div class="metric-pill main">
+          <span>📍 總場館數：3 個場館</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-pill sub">
+          <span>🟢 1 個現場使用中 · 🔵 2 個即將到來</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="group-content">
+      <div class="items-container">
+
+        <!-- Item 1: Active Venue -->
+        <div class="item-card is-active">
+          <div class="item-top">
+            <div class="item-title">台北流行音樂中心 專屬通行</div>
+            <div class="status-badge active">
+              <span class="pulse-dot"></span> 使用中
+            </div>
+          </div>
+
+          <div class="item-details">
+            <div class="detail-row">
+              <span class="detail-icon">🏟️</span>
+              <span>使用場館：台北流行音樂中心 表演廳</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">⏱️</span>
+              <span>開始與結束時間：2026/07/30 10:00 - 22:00</span>
+            </div>
+          </div>
+
+          <div class="item-bottom">
+            <div class="item-price">通行費用: <strong>$1,200</strong></div>
+            <button class="action-btn primary">快速快速驗票 / 通行</button>
+          </div>
+        </div>
+
+        <!-- Item 2: Upcoming Venue -->
+        <div class="item-card">
+          <div class="item-top">
+            <div class="item-title">高雄巨蛋 5G VIP 通行</div>
+            <div class="status-badge upcoming">
+              已預約 (08/15)
+            </div>
+          </div>
+
+          <div class="item-details">
+            <div class="detail-row">
+              <span class="detail-icon">🏟️</span>
+              <span>使用場館：高雄巨蛋 主場館</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">⏱️</span>
+              <span>開始與結束時間：2026/08/15 18:00 - 22:30</span>
+            </div>
+          </div>
+
+          <div class="item-bottom">
+            <div class="item-price">通行費用: <strong>$800</strong></div>
+            <button class="action-btn secondary">檢視入場規則</button>
+          </div>
+        </div>
+
+        <!-- Item 3: Expired Venue -->
+        <div class="item-card" style="opacity: 0.65;">
+          <div class="item-top">
+            <div class="item-title">臺北小巨蛋 優先通道</div>
+            <div class="status-badge expired">
+              已結束
+            </div>
+          </div>
+
+          <div class="item-details">
+            <div class="detail-row">
+              <span class="detail-icon">🏟️</span>
+              <span>使用場館：臺北小巨蛋</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">⏱️</span>
+              <span>已於 2026/05/20 結束使用</span>
+            </div>
+          </div>
+
+          <div class="item-bottom">
+            <div class="item-price">通行費用: <strong>$1,500</strong></div>
+            <button class="action-btn secondary" disabled style="opacity: 0.5; cursor: not-allowed;">已完結</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleGroup(id) {
+    const card = document.getElementById(id);
+    const toggleText = card.querySelector('.toggle-text');
+    card.classList.toggle('open');
+    if (toggleText) {
+      toggleText.textContent = card.classList.contains('open') ? '點擊收合' : '點擊展開';
+    }
+  }
+
+  function setViewMode(mode) {
+    const btns = document.querySelectorAll('.switch-btn');
+    btns.forEach(b => b.classList.remove('active'));
+
+    const annual = document.getElementById('group-annual');
+    const venue = document.getElementById('group-venue');
+
+    if (mode === 'smart') {
+      btns[0].classList.add('active');
+      annual.classList.add('open');
+      venue.classList.add('open');
+      annual.querySelector('.toggle-text').textContent = '點擊收合';
+      venue.querySelector('.toggle-text').textContent = '點擊收合';
+    } else {
+      btns[1].classList.add('active');
+      annual.classList.add('open');
+      venue.classList.add('open');
+      annual.querySelector('.toggle-text').textContent = '點擊收合';
+      venue.querySelector('.toggle-text').textContent = '點擊收合';
+    }
+  }
+</script>
+
+</body>
+</html>
