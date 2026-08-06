@@ -140,7 +140,6 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - `Active Task` 已結束或提供清楚恢復入口 (Handoff Point)。
 - `standard` 任務已完成輕量 retro；`heavy` 任務已完成完整 retro。
 - **Continuous Context Update (知識回寫)**：自我檢查對話過程中是否有新增的架構決策、限制或邊界情境。若有，強制要求更新 `CONTEXT.md` 或對應 ADR，絕不允許將知識遺留在對話歷史中。
-- **Stop Hook 守門員**：對於 `standard` 與 `heavy` 任務，檢查 Task Card 或 agent status 的尾端是否有明確的 `> [!CHECK] Cross-Model Review Approved by [Model/Role Name]` 標記。若無，強制攔截任務結案，並先執行 `cross-model-review` skill。
 
 ## 溝通規範
 
