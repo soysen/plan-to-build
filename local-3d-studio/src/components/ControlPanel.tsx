@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Camera, Sun, Upload, Eye, EyeOff, Layers, Sparkles, Move, RefreshCw, Dog, Target, X, Hand } from 'lucide-react';
+import { Camera, Sun, Upload, Eye, EyeOff, Layers, Sparkles, Move, RefreshCw, Dog, Target, X, Hand, Image as ImageIcon } from 'lucide-react';
 import { CameraPreset, HandGesture, QuadrupedSpecies, RenderMode, StudioConfig } from '../types/studio';
-import { PRESET_POSES } from '../utils/3d-generators';
+import { JOINT_LIMITS, PRESET_POSES, clampJointAngle } from '../utils/3d-generators';
 
 interface ControlPanelProps {
   config: StudioConfig;
   onChangeConfig: (newConfig: StudioConfig) => void;
   onUploadImage: (file: File) => void;
+  onSelectImageFromUrl?: (imageUrl: string, fileName: string) => void;
+  onUpload3DModel?: (file: File) => void;
   onTrigger3DConversion: () => void;
 }
 
@@ -14,6 +16,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   config,
   onChangeConfig,
   onUploadImage,
+  onSelectImageFromUrl,
+  onUpload3DModel,
   onTrigger3DConversion,
 }) => {
   const [activeTab, setActiveTab] = useState<'material' | 'camera' | 'lighting' | 'pose'>('pose');
@@ -42,6 +46,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const updateJointRotation = (jointName: string, axis: 'x' | 'y' | 'z', value: number) => {
+    const clampedValue = clampJointAngle(jointName, axis, value);
     onChangeConfig({
       ...config,
       pose: {
@@ -50,7 +55,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           ...config.pose.joints,
           [jointName]: {
             ...(config.pose.joints[jointName] || { x: 0, y: 0, z: 0 }),
-            [axis]: value,
+            [axis]: clampedValue,
           },
         },
       },
@@ -296,6 +301,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               ) : (
                 Object.entries(config.pose.joints).map(([jointName, rot]) => {
                   const isSelected = config.selectedJoint === jointName;
+                  const limits = JOINT_LIMITS[jointName];
+                  const rangeForAxis = (axis: 'x' | 'y' | 'z') => {
+                    if (!limits) return { min: -2.5, max: 2.5 };
+                    const min = limits[`min${axis.toUpperCase()}` as keyof typeof limits];
+                    const max = limits[`max${axis.toUpperCase()}` as keyof typeof limits];
+                    return { min, max };
+                  };
+                  const xRange = rangeForAxis('x');
+                  const yRange = rangeForAxis('y');
+                  const zRange = rangeForAxis('z');
                   return (
                     <div
                       key={jointName}
@@ -317,8 +332,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                           <span className="text-slate-400">X: {rot.x.toFixed(1)}</span>
                           <input
                             type="range"
-                            min="-2"
-                            max="2"
+                            min={xRange.min}
+                            max={xRange.max}
                             step="0.1"
                             value={rot.x}
                             onChange={(e) => updateJointRotation(jointName, 'x', parseFloat(e.target.value))}
@@ -329,8 +344,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                           <span className="text-slate-400">Y: {rot.y.toFixed(1)}</span>
                           <input
                             type="range"
-                            min="-2"
-                            max="2"
+                            min={yRange.min}
+                            max={yRange.max}
                             step="0.1"
                             value={rot.y}
                             onChange={(e) => updateJointRotation(jointName, 'y', parseFloat(e.target.value))}
@@ -341,8 +356,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                           <span className="text-slate-400">Z: {rot.z.toFixed(1)}</span>
                           <input
                             type="range"
-                            min="-2"
-                            max="2"
+                            min={zRange.min}
+                            max={zRange.max}
                             step="0.1"
                             value={rot.z}
                             onChange={(e) => updateJointRotation(jointName, 'z', parseFloat(e.target.value))}
@@ -363,8 +378,28 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              網路素材 3D 生成器
+              3D 模型與開源素材匯入
             </h3>
+
+            {/* 3D Model Upload Box */}
+            <div className="border-2 border-dashed border-cyan-500/50 hover:border-cyan-400 bg-cyan-950/20 hover:bg-cyan-950/40 rounded-xl p-4 text-center cursor-pointer transition-all">
+              <input
+                type="file"
+                accept=".gltf,.glb,.obj"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0] && onUpload3DModel) {
+                    onUpload3DModel(e.target.files[0]);
+                  }
+                }}
+                className="hidden"
+                id="model-3d-upload-input"
+              />
+              <label htmlFor="model-3d-upload-input" className="cursor-pointer block">
+                <Sparkles className="w-8 h-8 text-cyan-400 mx-auto mb-2 opacity-80" />
+                <p className="text-xs font-semibold text-slate-200">匯入 3D 人體 / 模型素材</p>
+                <p className="text-[10px] text-slate-400 mt-1">支援 Blender / Sketchfab 匯出之 .gltf / .glb / .obj 檔</p>
+              </label>
+            </div>
 
             {/* Drag & Drop Box */}
             <div className="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 bg-slate-900/50 hover:bg-slate-900 rounded-xl p-4 text-center cursor-pointer transition-all">
@@ -386,27 +421,68 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               </label>
             </div>
 
+            {/* Uploads Preset Images Gallery */}
+            <div className="space-y-2 pt-2 border-t border-slate-800/80">
+              <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
+                  uploads/ 內含素材藝廊 (點擊切換 3D 姿態)
+                </span>
+                <span className="text-[10px] text-cyan-400 font-mono">4 張圖片</span>
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: '160801453526.jpg', url: '/uploads/160801453526.jpg', label: '雙臂護面防守姿態' },
+                  { name: 'full (1).jpeg', url: '/uploads/full (1).jpeg', label: '馬步大張腿姿態' },
+                  { name: 'full.jpeg', url: '/uploads/full.jpeg', label: '高舉臂交叉腿姿態' },
+                  { name: 'images.jpeg', url: '/uploads/images.jpeg', label: '右臂高舉直立姿態' },
+                ].map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => onSelectImageFromUrl && onSelectImageFromUrl(item.url, item.name)}
+                    className={`p-2 rounded-xl border text-left transition-all group flex flex-col items-center gap-1.5 ${
+                      config.reference.fileName === item.name
+                        ? 'bg-cyan-950/60 border-cyan-400 ring-1 ring-cyan-400 shadow-lg shadow-cyan-500/20'
+                        : 'bg-slate-900/80 border-slate-800 hover:border-cyan-500/50'
+                    }`}
+                  >
+                    <div className="w-full h-20 rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center">
+                      <img src={item.url} alt={item.name} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-[10px] font-bold text-slate-200 truncate">{item.name}</div>
+                      <div className="text-[9px] text-cyan-400 font-medium truncate">{item.label}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Reference Image Preview */}
             {config.reference.src && (
               <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-slate-300 truncate max-w-[160px]">
-                    {config.reference.fileName || '已載入素材'}
+                    {config.reference.fileName || '已載入 2D 參考圖'}
                   </span>
-                  <button
-                    onClick={onTrigger3DConversion}
-                    disabled={config.reference.isConverting}
-                    className="px-3 py-1 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white text-[11px] font-semibold rounded-lg shadow-md shadow-pink-500/20 disabled:opacity-50"
-                  >
-                    {config.reference.isConverting ? (
-                      <span className="flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin" /> AI 生成中...
-                      </span>
-                    ) : (
-                      '轉成 3D 模型'
-                    )}
-                  </button>
                 </div>
+
+                <button
+                  onClick={onTrigger3DConversion}
+                  disabled={config.reference.isConverting}
+                  className="w-full py-2 bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-500/20 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  {config.reference.isConverting ? (
+                    <span className="flex items-center gap-1.5">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" /> AI 人物肢體姿態辨識中...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" /> AI 2D 姿態辨識與自動對齊 3D 人偶
+                    </span>
+                  )}
+                </button>
 
                 <div className="h-28 rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-800">
                   <img src={config.reference.src} alt="Uploaded preview" className="max-h-full object-contain" />

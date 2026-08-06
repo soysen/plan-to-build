@@ -38,6 +38,28 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+// List uploaded images API Endpoint
+app.get('/api/uploads', (_req, res) => {
+  try {
+    if (!fs.existsSync(uploadDir)) {
+      res.json({ files: [] });
+      return;
+    }
+    const files = fs.readdirSync(uploadDir).filter((file) => {
+      const ext = path.extname(file).toLowerCase();
+      return ['.png', '.jpg', '.jpeg', '.webp'].includes(ext);
+    });
+    res.json({
+      files: files.map((file) => ({
+        name: file,
+        url: `/uploads/${file}`,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read upload directory' });
+  }
+});
+
 // Image Upload API Endpoint
 app.post('/api/upload', upload.single('image'), (req, res) => {
   if (!req.file) {
