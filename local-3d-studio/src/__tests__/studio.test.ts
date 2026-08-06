@@ -27,14 +27,22 @@ describe("Local 3D Studio Utilities, 2D Pose Estimation & Vertical Billboard", (
 		expect(PRESET_POSES).toHaveProperty("quadruped_stand")
 	})
 
-	it("should clamp hip rotation angles with expanded 25% range (-X swings thigh forward, +X swings backward)", () => {
-		expect(clampJointAngle("leftHip", "x", -2.5)).toBe(-2.25)
-		expect(clampJointAngle("leftHip", "x", 1.5)).toBe(1.0)
+	it("should clamp hip rotation angles with expanded abduction range (-X swings thigh forward, Z allows high side leg lift)", () => {
+		expect(clampJointAngle("leftHip", "x", -4.0)).toBeCloseTo(-3.75)
+		expect(clampJointAngle("leftHip", "x", 3.0)).toBeCloseTo(2.25)
+		expect(clampJointAngle("leftHip", "z", -3.0)).toBeCloseTo(-2.7)
+		expect(clampJointAngle("rightHip", "z", 3.0)).toBeCloseTo(2.7)
 	})
 
-	it("should expose wrist and ankle joints in limits and humanoid presets", () => {
+	it("should expose wrist, elbow, and ankle joints in limits with 180/270 degree rotation range and humanoid presets", () => {
+		expect(JOINT_LIMITS).toHaveProperty("leftElbow")
+		expect(JOINT_LIMITS).toHaveProperty("rightElbow")
+		expect(JOINT_LIMITS.leftElbow.minX * (180 / Math.PI)).toBeCloseTo(-180)
+		expect(JOINT_LIMITS.leftElbow.maxX * (180 / Math.PI)).toBeCloseTo(180)
 		expect(JOINT_LIMITS).toHaveProperty("leftWrist")
 		expect(JOINT_LIMITS).toHaveProperty("rightWrist")
+		expect(JOINT_LIMITS.leftWrist.minX * (180 / Math.PI)).toBeCloseTo(-135)
+		expect(JOINT_LIMITS.leftWrist.maxX * (180 / Math.PI)).toBeCloseTo(135)
 		expect(JOINT_LIMITS).toHaveProperty("leftAnkle")
 		expect(JOINT_LIMITS).toHaveProperty("rightAnkle")
 		expect(PRESET_POSES.t_pose.joints).toHaveProperty("leftWrist")
@@ -43,10 +51,6 @@ describe("Local 3D Studio Utilities, 2D Pose Estimation & Vertical Billboard", (
 		expect(CUSTOM_BONE_MAPPING.rightWrist).toBe("hand.R")
 		expect(CUSTOM_BONE_MAPPING.leftAnkle).toBe("foot.L")
 		expect(CUSTOM_BONE_MAPPING.rightAnkle).toBe("foot.R")
-		expect(JOINT_LIMITS.leftWrist.minX).toBeCloseTo(-Math.PI / 2)
-		expect(JOINT_LIMITS.leftWrist.maxX).toBeCloseTo(Math.PI / 2)
-		expect(JOINT_LIMITS.rightWrist.minX).toBeCloseTo(-Math.PI / 2)
-		expect(JOINT_LIMITS.rightWrist.maxX).toBeCloseTo(Math.PI / 2)
 	})
 
 	it("should translate direct gizmo dragging into anatomical joint directions", () => {
@@ -78,7 +82,7 @@ describe("Local 3D Studio Utilities, 2D Pose Estimation & Vertical Billboard", (
 
 		expect(neckGroup).toBeDefined()
 		expect(headGroup).toBeDefined()
-		expect(headGroup!.position.y).toBeCloseTo(0.14)
+		expect(headGroup!.position.y).toBeCloseTo(0.09)
 
 		const neckMeshes: THREE.Mesh[] = []
 		neckGroup!.traverse(child => {
@@ -87,7 +91,7 @@ describe("Local 3D Studio Utilities, 2D Pose Estimation & Vertical Billboard", (
 			}
 		})
 
-		expect(neckMeshes[0].position.y).toBeCloseTo(0.07)
+		expect(neckMeshes[0].position.y).toBeCloseTo(0.045)
 	})
 
 	it("should keep anatomical feet connected close to the ankle joints", () => {

@@ -451,10 +451,25 @@ export const Viewport3D: React.FC<Viewport3DProps> = ({config, onSelectJoint, on
 		}
 
 		// Dragging 3D Gizmo Rings directly rotates the selected joint in real time!
-		if (isGizmoDraggingRef.current && activeGizmoAxisRef.current && config.selectedJoint && onJointRotate) {
-			const rotateSpeed = 0.03
+		if (isGizmoDraggingRef.current && activeGizmoAxisRef.current && config.selectedJoint && onJointRotate && cameraRef.current) {
+			const rotateSpeed = 0.02
 			const axis = activeGizmoAxisRef.current
-			const pointerDelta = axis === "x" ? -deltaY : axis === "y" ? deltaX : deltaX - deltaY
+
+			// Compute camera direction to make drag direction intuitive from any camera angle
+			const cameraDir = new THREE.Vector3()
+			cameraRef.current.getWorldDirection(cameraDir)
+
+			let perspectiveSign = 1
+			if (axis === 'y') {
+				if (cameraDir.z > 0) perspectiveSign = -1
+			} else if (axis === 'x') {
+				if (cameraDir.z > 0) perspectiveSign = -1
+			} else if (axis === 'z') {
+				if (cameraDir.x < 0) perspectiveSign = -1
+			}
+
+			const rawPointerDelta = axis === "x" ? -deltaY : axis === "y" ? deltaX : (deltaX - deltaY)
+			const pointerDelta = rawPointerDelta * perspectiveSign
 			const delta = getAnatomicalJointDelta(config.selectedJoint, axis, pointerDelta * rotateSpeed)
 			onJointRotate(config.selectedJoint, axis, delta)
 			return

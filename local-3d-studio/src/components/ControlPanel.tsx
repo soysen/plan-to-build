@@ -3,6 +3,24 @@ import { Camera, Sun, Upload, Eye, EyeOff, Layers, Sparkles, Move, RefreshCw, Do
 import { CameraPreset, HandGesture, QuadrupedSpecies, RenderMode, StudioConfig } from '../types/studio';
 import { JOINT_LIMITS, PRESET_POSES, clampJointAngle } from '../utils/3d-generators';
 
+const JOINT_DISPLAY_NAMES: Record<string, string> = {
+  head: '頭部 (Head)',
+  neck: '頸部 (Neck)',
+  spine: '軀幹 (Spine)',
+  leftShoulder: '左肩 (L Shoulder)',
+  rightShoulder: '右肩 (R Shoulder)',
+  leftElbow: '左肘 (L Elbow)',
+  rightElbow: '右肘 (R Elbow)',
+  leftWrist: '左腕 (L Wrist)',
+  rightWrist: '右腕 (R Wrist)',
+  leftHip: '左胯 (L Hip)',
+  rightHip: '右胯 (R Hip)',
+  leftKnee: '左膝 (L Knee)',
+  rightKnee: '右膝 (R Knee)',
+  leftAnkle: '左踝 (L Ankle)',
+  rightAnkle: '右踝 (R Ankle)',
+};
+
 interface ControlPanelProps {
   config: StudioConfig;
   onChangeConfig: (newConfig: StudioConfig) => void;
@@ -295,7 +313,12 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
             {/* Joint Slider List */}
             <div className="space-y-3 pt-2 border-t border-slate-800">
-              <label className="text-xs font-medium text-slate-300">微調關節旋轉 (Joint Rotations)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-slate-300">解剖關節角度 (Anatomical Joint Angles °)</label>
+                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded font-mono">
+                  活動度 +20%
+                </span>
+              </div>
               {Object.keys(config.pose.joints).length === 0 ? (
                 <p className="text-xs text-slate-500">目前模型無可調關節數據</p>
               ) : (
@@ -303,14 +326,24 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   const isSelected = config.selectedJoint === jointName;
                   const limits = JOINT_LIMITS[jointName];
                   const rangeForAxis = (axis: 'x' | 'y' | 'z') => {
-                    if (!limits) return { min: -2.5, max: 2.5 };
-                    const min = limits[`min${axis.toUpperCase()}` as keyof typeof limits];
-                    const max = limits[`max${axis.toUpperCase()}` as keyof typeof limits];
-                    return { min, max };
+                    if (!limits) return { min: -180, max: 180 };
+                    const minRad = limits[`min${axis.toUpperCase()}` as keyof typeof limits];
+                    const maxRad = limits[`max${axis.toUpperCase()}` as keyof typeof limits];
+                    return {
+                      min: Math.round(minRad * (180 / Math.PI)),
+                      max: Math.round(maxRad * (180 / Math.PI)),
+                    };
                   };
-                  const xRange = rangeForAxis('x');
-                  const yRange = rangeForAxis('y');
-                  const zRange = rangeForAxis('z');
+                  const xDegRange = rangeForAxis('x');
+                  const yDegRange = rangeForAxis('y');
+                  const zDegRange = rangeForAxis('z');
+
+                  const xDeg = Math.round(rot.x * (180 / Math.PI));
+                  const yDeg = Math.round(rot.y * (180 / Math.PI));
+                  const zDeg = Math.round(rot.z * (180 / Math.PI));
+
+                  const displayName = JOINT_DISPLAY_NAMES[jointName] || jointName;
+
                   return (
                     <div
                       key={jointName}
@@ -321,47 +354,56 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                           : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className={`text-[11px] font-semibold capitalize ${isSelected ? 'text-cyan-300 font-bold' : 'text-emerald-400'}`}>
-                          {jointName}
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-[11px] font-semibold ${isSelected ? 'text-cyan-300 font-bold' : 'text-emerald-400'}`}>
+                          {displayName}
                         </span>
-                        {isSelected && <span className="text-[10px] text-cyan-400 font-mono">SELECTED</span>}
+                        {isSelected && <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-950 border border-cyan-700/60 px-1.5 rounded">SELECTED</span>}
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-[10px]" onClick={(e) => e.stopPropagation()}>
+                      <div className="space-y-2 text-[10px]" onClick={(e) => e.stopPropagation()}>
                         <div>
-                          <span className="text-slate-400">X: {rot.x.toFixed(1)}</span>
+                          <div className="flex justify-between text-slate-400 mb-0.5 font-medium">
+                            <span>前屈/後伸 Pitch (X):</span>
+                            <span className="text-cyan-300 font-mono">{xDeg}°</span>
+                          </div>
                           <input
                             type="range"
-                            min={xRange.min}
-                            max={xRange.max}
-                            step="0.1"
-                            value={rot.x}
-                            onChange={(e) => updateJointRotation(jointName, 'x', parseFloat(e.target.value))}
-                            className="w-full accent-emerald-500"
+                            min={xDegRange.min}
+                            max={xDegRange.max}
+                            step="1"
+                            value={xDeg}
+                            onChange={(e) => updateJointRotation(jointName, 'x', parseFloat(e.target.value) * (Math.PI / 180))}
+                            className="w-full accent-emerald-500 h-1.5 rounded-lg bg-slate-800 cursor-pointer"
                           />
                         </div>
                         <div>
-                          <span className="text-slate-400">Y: {rot.y.toFixed(1)}</span>
+                          <div className="flex justify-between text-slate-400 mb-0.5 font-medium">
+                            <span>內旋/外旋 Yaw (Y):</span>
+                            <span className="text-cyan-300 font-mono">{yDeg}°</span>
+                          </div>
                           <input
                             type="range"
-                            min={yRange.min}
-                            max={yRange.max}
-                            step="0.1"
-                            value={rot.y}
-                            onChange={(e) => updateJointRotation(jointName, 'y', parseFloat(e.target.value))}
-                            className="w-full accent-emerald-500"
+                            min={yDegRange.min}
+                            max={yDegRange.max}
+                            step="1"
+                            value={yDeg}
+                            onChange={(e) => updateJointRotation(jointName, 'y', parseFloat(e.target.value) * (Math.PI / 180))}
+                            className="w-full accent-emerald-500 h-1.5 rounded-lg bg-slate-800 cursor-pointer"
                           />
                         </div>
                         <div>
-                          <span className="text-slate-400">Z: {rot.z.toFixed(1)}</span>
+                          <div className="flex justify-between text-slate-400 mb-0.5 font-medium">
+                            <span>側展/內收 Roll (Z):</span>
+                            <span className="text-cyan-300 font-mono">{zDeg}°</span>
+                          </div>
                           <input
                             type="range"
-                            min={zRange.min}
-                            max={zRange.max}
-                            step="0.1"
-                            value={rot.z}
-                            onChange={(e) => updateJointRotation(jointName, 'z', parseFloat(e.target.value))}
-                            className="w-full accent-emerald-500"
+                            min={zDegRange.min}
+                            max={zDegRange.max}
+                            step="1"
+                            value={zDeg}
+                            onChange={(e) => updateJointRotation(jointName, 'z', parseFloat(e.target.value) * (Math.PI / 180))}
+                            className="w-full accent-emerald-500 h-1.5 rounded-lg bg-slate-800 cursor-pointer"
                           />
                         </div>
                       </div>

@@ -12,8 +12,9 @@ export interface JointLimit {
 	maxZ: number
 }
 
-const JOINT_RANGE_MULTIPLIER = 1.25
-const WRIST_FRONT_BACK_LIMIT = Math.PI / 2 / JOINT_RANGE_MULTIPLIER
+const JOINT_RANGE_MULTIPLIER = 1.50; // Increased range of motion (ROM) by +20%
+const WRIST_270_BASE_LIMIT = (135 * Math.PI / 180) / JOINT_RANGE_MULTIPLIER; // Results in -135° to +135° (270° total range)
+const ELBOW_180_BASE_LIMIT = Math.PI / JOINT_RANGE_MULTIPLIER; // Results in -180° to +180° (full 180° front-back swing)
 
 const BASE_JOINT_LIMITS: Record<string, JointLimit> = {
 	head: {minX: -0.6, maxX: 0.6, minY: -1.2, maxY: 1.2, minZ: -0.4, maxZ: 0.4},
@@ -21,14 +22,42 @@ const BASE_JOINT_LIMITS: Record<string, JointLimit> = {
 	spine: {minX: -0.4, maxX: 0.6, minY: -0.6, maxY: 0.6, minZ: -0.3, maxZ: 0.3},
 	leftShoulder: {minX: -2.5, maxX: 1.5, minY: -1.5, maxY: 1.5, minZ: -1.5, maxZ: 1.5},
 	rightShoulder: {minX: -2.5, maxX: 1.5, minY: -1.5, maxY: 1.5, minZ: -1.5, maxZ: 1.5},
-	leftElbow: {minX: -2.5, maxX: 0, minY: -0.15, maxY: 0.15, minZ: -0.15, maxZ: 0.15},
-	rightElbow: {minX: -2.5, maxX: 0, minY: -0.15, maxY: 0.15, minZ: -0.15, maxZ: 0.15},
-	leftHip: {minX: -1.8, maxX: 0.8, minY: -0.6, maxY: 0.6, minZ: -0.4, maxZ: 0.6},
-	rightHip: {minX: -1.8, maxX: 0.8, minY: -0.6, maxY: 0.6, minZ: -0.6, maxZ: 0.4},
+	leftElbow: {
+		minX: -ELBOW_180_BASE_LIMIT,
+		maxX: ELBOW_180_BASE_LIMIT,
+		minY: -ELBOW_180_BASE_LIMIT,
+		maxY: ELBOW_180_BASE_LIMIT,
+		minZ: -ELBOW_180_BASE_LIMIT,
+		maxZ: ELBOW_180_BASE_LIMIT,
+	},
+	rightElbow: {
+		minX: -ELBOW_180_BASE_LIMIT,
+		maxX: ELBOW_180_BASE_LIMIT,
+		minY: -ELBOW_180_BASE_LIMIT,
+		maxY: ELBOW_180_BASE_LIMIT,
+		minZ: -ELBOW_180_BASE_LIMIT,
+		maxZ: ELBOW_180_BASE_LIMIT,
+	},
+	leftHip: {minX: -2.5, maxX: 1.5, minY: -1.2, maxY: 1.2, minZ: -1.8, maxZ: 1.8},
+	rightHip: {minX: -2.5, maxX: 1.5, minY: -1.2, maxY: 1.2, minZ: -1.8, maxZ: 1.8},
 	leftKnee: {minX: 0, maxX: 2.5, minY: -0.1, maxY: 0.1, minZ: -0.1, maxZ: 0.1},
 	rightKnee: {minX: 0, maxX: 2.5, minY: -0.1, maxY: 0.1, minZ: -0.1, maxZ: 0.1},
-	leftWrist: {minX: -WRIST_FRONT_BACK_LIMIT, maxX: WRIST_FRONT_BACK_LIMIT, minY: -0.55, maxY: 0.55, minZ: -0.75, maxZ: 0.75},
-	rightWrist: {minX: -WRIST_FRONT_BACK_LIMIT, maxX: WRIST_FRONT_BACK_LIMIT, minY: -0.55, maxY: 0.55, minZ: -0.75, maxZ: 0.75},
+	leftWrist: {
+		minX: -WRIST_270_BASE_LIMIT,
+		maxX: WRIST_270_BASE_LIMIT,
+		minY: -WRIST_270_BASE_LIMIT,
+		maxY: WRIST_270_BASE_LIMIT,
+		minZ: -WRIST_270_BASE_LIMIT,
+		maxZ: WRIST_270_BASE_LIMIT,
+	},
+	rightWrist: {
+		minX: -WRIST_270_BASE_LIMIT,
+		maxX: WRIST_270_BASE_LIMIT,
+		minY: -WRIST_270_BASE_LIMIT,
+		maxY: WRIST_270_BASE_LIMIT,
+		minZ: -WRIST_270_BASE_LIMIT,
+		maxZ: WRIST_270_BASE_LIMIT,
+	},
 	leftAnkle: {minX: -0.65, maxX: 0.85, minY: -0.35, maxY: 0.35, minZ: -0.45, maxZ: 0.45},
 	rightAnkle: {minX: -0.65, maxX: 0.85, minY: -0.35, maxY: 0.35, minZ: -0.45, maxZ: 0.45},
 }
@@ -836,7 +865,7 @@ export function buildHumanoidMannequin(
 	// 1. Pelvis & Gluteal Muscle Overlay (下髖部與流線臀肌)
 	const pelvisGroup = new THREE.Group()
 	pelvisGroup.name = "pelvis"
-	pelvisGroup.position.set(0, 0.95, 0)
+	pelvisGroup.position.set(0, 1.12, 0)
 	rootGroup.add(pelvisGroup)
 
 	const pMat = getMaterialForMode(mode, skinColor, selectedJoint === "pelvis")
@@ -924,27 +953,27 @@ export function buildHumanoidMannequin(
 	tagMesh(rightPec, "spine")
 	spineGroup.add(rightPec)
 
-	// 4. Smooth Neck & Trapezius Muscle Overlay
+	// 4. Smooth Neck & Trapezius Muscle Overlay (縮短脖子)
 	const neckGroup = new THREE.Group()
 	neckGroup.name = "neck"
 	neckGroup.position.set(0, 0.55, 0)
 	spineGroup.add(neckGroup)
 
 	const neckMat = getMaterialForMode(mode, skinColor, selectedJoint === "neck")
-	const neckGeo = createOrganicMuscleCylinder(0.08, 0.092, 0.108, 0.14, 20)
+	const neckGeo = createOrganicMuscleCylinder(0.08, 0.092, 0.108, 0.09, 20)
 	const neckMesh = new THREE.Mesh(neckGeo, neckMat)
-	neckMesh.position.set(0, 0.07, 0)
+	neckMesh.position.set(0, 0.045, 0)
 	tagMesh(neckMesh, "neck")
 	neckGroup.add(neckMesh)
 
-	// 5. Head with Natural Facial Features (Facing +Z Forward!)
+	// 5. Head with Natural Facial Features (Facing +Z Forward!) - 還原原版頭型
 	const headGroup = new THREE.Group()
 	headGroup.name = "head"
-	headGroup.position.set(0, 0.14, 0)
+	headGroup.position.set(0, 0.09, 0)
 	neckGroup.add(headGroup)
 
 	const headMat = getMaterialForMode(mode, skinColor, selectedJoint === "head")
-	const featureMat = getMaterialForMode(mode, muscleShadeColor, selectedJoint === "head Head")
+	const featureMat = getMaterialForMode(mode, muscleShadeColor, selectedJoint === "head")
 
 	const skullMesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 24, 24), headMat)
 	skullMesh.scale.set(0.92, 1.2, 0.98)
@@ -982,6 +1011,23 @@ export function buildHumanoidMannequin(
 	// 6. Sculpted Arms & Deltoid Cap Overlay
 	const shoulderX = gender === "male" ? 0.28 : 0.24
 
+	// Anatomical Muscle & Limb Tapering Radius Tokens
+	const upperArmTopR = gender === "male" ? 0.076 : 0.062
+	const upperArmMidR = gender === "male" ? 0.082 : 0.066
+	const upperArmBottomR = gender === "male" ? 0.052 : 0.044
+
+	const forearmTopR = gender === "male" ? 0.062 : 0.052
+	const forearmMidR = gender === "male" ? 0.068 : 0.056
+	const forearmBottomR = gender === "male" ? 0.040 : 0.034
+
+	const thighTopR = gender === "male" ? 0.125 : 0.130
+	const thighMidR = gender === "male" ? 0.115 : 0.110
+	const thighBottomR = gender === "male" ? 0.070 : 0.065
+
+	const calfTopR = gender === "male" ? 0.072 : 0.064
+	const calfMidR = gender === "male" ? 0.086 : 0.075
+	const calfBottomR = gender === "male" ? 0.046 : 0.040
+
 	// Left Arm (-X)
 	const leftShoulderGroup = new THREE.Group()
 	leftShoulderGroup.name = "leftShoulder"
@@ -994,7 +1040,7 @@ export function buildHumanoidMannequin(
 	leftShoulderGroup.add(lDeltoidMesh)
 
 	const lUpperArmMat = getMaterialForMode(mode, skinColor, selectedJoint === "leftShoulder")
-	const lUpperArmGeo = createOrganicMuscleCylinder(0.065, 0.08, 0.065, 0.36, 18)
+	const lUpperArmGeo = createOrganicMuscleCylinder(upperArmTopR, upperArmMidR, upperArmBottomR, 0.36, 18)
 	const lUpperArm = new THREE.Mesh(lUpperArmGeo, lUpperArmMat)
 	lUpperArm.position.set(0, -0.2, 0)
 	tagMesh(lUpperArm, "leftShoulder")
@@ -1011,7 +1057,7 @@ export function buildHumanoidMannequin(
 	leftElbowGroup.add(lElbowJoint)
 
 	const lForearmMat = getMaterialForMode(mode, skinColor, selectedJoint === "leftElbow")
-	const lForearmGeo = createOrganicMuscleCylinder(0.05, 0.07, 0.065, 0.36, 18)
+	const lForearmGeo = createOrganicMuscleCylinder(forearmTopR, forearmMidR, forearmBottomR, 0.36, 18)
 	const lForearm = new THREE.Mesh(lForearmGeo, lForearmMat)
 	lForearm.position.set(0, -0.2, 0)
 	tagMesh(lForearm, "leftElbow")
@@ -1050,7 +1096,7 @@ export function buildHumanoidMannequin(
 	rightShoulderGroup.add(rDeltoidMesh)
 
 	const rUpperArmMat = getMaterialForMode(mode, skinColor, selectedJoint === "rightShoulder")
-	const rUpperArmGeo = createOrganicMuscleCylinder(0.065, 0.08, 0.065, 0.36, 18)
+	const rUpperArmGeo = createOrganicMuscleCylinder(upperArmTopR, upperArmMidR, upperArmBottomR, 0.36, 18)
 	const rUpperArm = new THREE.Mesh(rUpperArmGeo, rUpperArmMat)
 	rUpperArm.position.set(0, -0.2, 0)
 	tagMesh(rUpperArm, "rightShoulder")
@@ -1067,7 +1113,7 @@ export function buildHumanoidMannequin(
 	rightElbowGroup.add(rElbowJoint)
 
 	const rForearmMat = getMaterialForMode(mode, skinColor, selectedJoint === "rightElbow")
-	const rForearmGeo = createOrganicMuscleCylinder(0.05, 0.07, 0.065, 0.36, 18)
+	const rForearmGeo = createOrganicMuscleCylinder(forearmTopR, forearmMidR, forearmBottomR, 0.36, 18)
 	const rForearm = new THREE.Mesh(rForearmGeo, rForearmMat)
 	rForearm.position.set(0, -0.2, 0)
 	tagMesh(rForearm, "rightElbow")
@@ -1109,15 +1155,15 @@ export function buildHumanoidMannequin(
 	leftHipGroup.add(lHipJoint)
 
 	const lThighMat = getMaterialForMode(mode, skinColor, selectedJoint === "leftHip")
-	const lThighGeo = createOrganicMuscleCylinder(0.075, 0.11, 0.09, 0.46, 18)
+	const lThighGeo = createOrganicMuscleCylinder(thighTopR, thighMidR, thighBottomR, 0.54, 18)
 	const lThigh = new THREE.Mesh(lThighGeo, lThighMat)
-	lThigh.position.set(0, -0.25, 0)
+	lThigh.position.set(0, -0.29, 0)
 	tagMesh(lThigh, "leftHip")
 	leftHipGroup.add(lThigh)
 
 	const leftKneeGroup = new THREE.Group()
 	leftKneeGroup.name = "leftKnee"
-	leftKneeGroup.position.set(0, -0.5, 0)
+	leftKneeGroup.position.set(0, -0.58, 0)
 	leftHipGroup.add(leftKneeGroup)
 
 	const lKneeMat = getMaterialForMode(mode, muscleShadeColor, selectedJoint === "leftKnee")
@@ -1126,15 +1172,15 @@ export function buildHumanoidMannequin(
 	leftKneeGroup.add(lKneeJoint)
 
 	const lCalfMat = getMaterialForMode(mode, skinColor, selectedJoint === "leftKnee")
-	const lShinGeo = createOrganicMuscleCylinder(0.055, 0.08, 0.07, 0.46, 18)
+	const lShinGeo = createOrganicMuscleCylinder(calfTopR, calfMidR, calfBottomR, 0.54, 18)
 	const lShin = new THREE.Mesh(lShinGeo, lCalfMat)
-	lShin.position.set(0, -0.25, 0)
+	lShin.position.set(0, -0.29, 0)
 	tagMesh(lShin, "leftKnee")
 	leftKneeGroup.add(lShin)
 
 	const leftAnkleGroup = new THREE.Group()
 	leftAnkleGroup.name = "leftAnkle"
-	leftAnkleGroup.position.set(0, -0.46, 0)
+	leftAnkleGroup.position.set(0, -0.54, 0)
 	leftKneeGroup.add(leftAnkleGroup)
 
 	const lAnkleMat = getMaterialForMode(mode, muscleShadeColor, selectedJoint === "leftAnkle")
@@ -1158,15 +1204,15 @@ export function buildHumanoidMannequin(
 	rightHipGroup.add(rHipJoint)
 
 	const rThighMat = getMaterialForMode(mode, skinColor, selectedJoint === "rightHip")
-	const rThighGeo = createOrganicMuscleCylinder(0.075, 0.11, 0.09, 0.46, 18)
+	const rThighGeo = createOrganicMuscleCylinder(thighTopR, thighMidR, thighBottomR, 0.54, 18)
 	const rThigh = new THREE.Mesh(rThighGeo, rThighMat)
-	rThigh.position.set(0, -0.25, 0)
+	rThigh.position.set(0, -0.29, 0)
 	tagMesh(rThigh, "rightHip")
 	rightHipGroup.add(rThigh)
 
 	const rightKneeGroup = new THREE.Group()
 	rightKneeGroup.name = "rightKnee"
-	rightKneeGroup.position.set(0, -0.5, 0)
+	rightKneeGroup.position.set(0, -0.58, 0)
 	rightHipGroup.add(rightKneeGroup)
 
 	const rKneeMat = getMaterialForMode(mode, muscleShadeColor, selectedJoint === "rightKnee")
@@ -1175,15 +1221,15 @@ export function buildHumanoidMannequin(
 	rightKneeGroup.add(rKneeJoint)
 
 	const rCalfMat = getMaterialForMode(mode, skinColor, selectedJoint === "rightKnee")
-	const rShinGeo = createOrganicMuscleCylinder(0.055, 0.08, 0.07, 0.46, 18)
+	const rShinGeo = createOrganicMuscleCylinder(calfTopR, calfMidR, calfBottomR, 0.54, 18)
 	const rShin = new THREE.Mesh(rShinGeo, rCalfMat)
-	rShin.position.set(0, -0.25, 0)
+	rShin.position.set(0, -0.29, 0)
 	tagMesh(rShin, "rightKnee")
 	rightKneeGroup.add(rShin)
 
 	const rightAnkleGroup = new THREE.Group()
 	rightAnkleGroup.name = "rightAnkle"
-	rightAnkleGroup.position.set(0, -0.46, 0)
+	rightAnkleGroup.position.set(0, -0.54, 0)
 	rightKneeGroup.add(rightAnkleGroup)
 
 	const rAnkleMat = getMaterialForMode(mode, muscleShadeColor, selectedJoint === "rightAnkle")
