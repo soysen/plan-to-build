@@ -190,7 +190,6 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - 進場閘門：開始建置前（確認 plan 或 agent status 與任務 ID）。
 - 切片閘門：每個切片完成後（驗證證據與文件同步）。
 - 狀態閘門：進入 `Blocked / Paused / Needs input` 時（必問繼續或重置）。
-- 審核閘門：在交付前如果缺乏 Cross-Model Review Marker，狀態強制退回 `Blocked` 或 `In progress`。
 - 交付閘門：宣告完成前（DoD 與文件同步完整性）。
 
 除了上述閘門，其他步驟維持流暢執行，不強制中斷。
@@ -283,7 +282,6 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 4. **文件同步 (SSOT)**：至少同步兩份活文件，其中必含 `agent-status.md`。
 5. **Continuous Context Update (知識回寫)**：對話期間產生的新知、限制與決策，必須主動更新至 `CONTEXT.md` 或 ADR，嚴禁遺留於 Ephemeral Conversation 中。
 6. **未完成項揭露**：延後事項已記錄原因與後續 Handoff 入口。
-7. **審核標記**：`standard` 與 `heavy` 任務必須有 `cross-model-review` 的通過標記。
 
 ### 完成前檢查清單 (Shutdown Quick Check)
 

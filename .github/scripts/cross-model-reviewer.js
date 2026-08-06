@@ -15,7 +15,8 @@ Rules:
 > [!CHECK] Cross-Model Review Approved by Independent Reviewer Persona`;
 
 async function main() {
-  console.log('🔍 Starting Cross-Model Review...\n');
+  console.log('⚠️ Cross-Model Review mechanism is currently DISABLED by user decision to save tokens.\n');
+  process.exit(0);
   
   // Get Git Diff
   let diff = '';

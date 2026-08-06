@@ -5,7 +5,10 @@ argument-hint: "請指派其他模型或啟動獨立的 reviewer Persona 進行�
 user-invocable: true
 ---
 
-# Cross Model Review 工作流
+# Cross Model Review 工作流（已暫停使用 / Disabled）
+
+> [!WARNING]
+> 本機制目前已依使用者指示暫停使用（非強制執行），以避免無驗證環境時消耗額外 Token。
 
 ## 概覽
 
