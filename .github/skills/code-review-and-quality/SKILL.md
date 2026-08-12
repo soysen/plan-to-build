@@ -7,18 +7,19 @@ user-invocable: true
 
 # 程式碼審查與品質
 
-## 概覽
+## 輕量化原則與豁免規則 (Exemption & Lightweight Mode)
 
-在程式碼合併前發現問題，而不是在生產環境中。良好的 code review 不只是找 bug，而是提升整體程式碼品質——從可讀性到安全性到架構設計。
+> **[Guardrails] 避免流程噪音**：
+> 1. **`micro` 與小切片自動豁免 (Exempt)**：小型修改不需要輸出長篇 Review 報告，依靠 TypeScript/ESLint Diagnostics + 測試通過即可。
+> 2. **`heavy` 任務採「雙維度輕量點檢」**：非必要不出具五維全量文件，僅需檢查 **Spec 契合度（無範疇蔓延）** 與 **邊界/安全防禦**，以 3-5 行條記點收。
 
 ## 適用時機
 
-- 審查即將合併的 PR
+- 審查大型 PR 或完成 `heavy` 任務切片時
 - 在自己提交前做自我審查（self-review）
-- 驗收新功能的實作品質
-- 建立專案的程式碼風格基準
+- 驗收關鍵核心模組實作品質
 
-## 五維審查框架
+## 五維審查框架 (Full Framework - 按需使用)
 
 ```
 1. CORRECTNESS   → 程式碼做了它應該做的事嗎？

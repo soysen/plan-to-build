@@ -129,6 +129,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - 活文件確保機制：寫入活文件（如 `worklog`、`plan` 等）時，若對應的資料夾或檔案不存在，必須主動建立（包含建立父目錄），不可因找不到路徑而跳過同步。
 - 單一切片工作循環：`standard / heavy` 任務一次只推進一個切片，依序完成宣告、執行、驗證與雙寫。
 - TDD 鐵律 (Iron Law of TDD)：進行功能實作時，嚴禁在未先看到失敗測試 (Red) 報告前撰寫任何產品實作代碼；測試失敗後只寫能讓測試通過的最少代碼 (Minimum Passing Code)。
+- 輕量 Review & Simplify 原則：`micro` 任務自動豁免 Code Review；`code-review-and-quality` 僅在 `heavy` 切片採雙維度（Spec契合度+邊界防禦）點檢；`code-simplification` 僅為 TDD 藍燈按需選用工具，絕非強制關卡。
 - 切片隔離策略：`standard / heavy` 任務切片建議使用輕量 Git Branch 隔離開發與驗證，成功後 merge 回主分支，失敗則直接刪除分支，免去維護複雜 Worktrees 的成本。
 - 活文件持續回寫：建置進行中也要同步 plan / worklog / agent status，不可只在結尾補寫。
 - 失敗即時阻塞：build/test/lint/typecheck 非 0 結束時，先把任務標為 `阻塞`，補 checkpoint，再進入除錯。
