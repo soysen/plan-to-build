@@ -67,6 +67,10 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 分級確認後，先更新活文件，再執行任何讀檔、搜尋、命令、編輯或驗證。不論任務屬於哪個級別，啟動時都必須在對話或文件中明確輸出所選擇的 Skill Route。
 
 - **Project Environment Setup (環境與上下文確認)**：啟動前必須掃描是否具備足夠的專案 Context（如 `CONTEXT.md` 或 Tracker Labels）。若缺乏，應主動建議執行 `context-engineering` 初始化環境。
+- **規格文件硬性檢查 (Feature Spec Requirement)**：
+  - 在執行任何 Code 編輯、UI 畫面創建或系統開發前，必須確認對應所屬專案中已存在 Feature Spec 規格文件（例如專案庫的 `spec/{feature}-spec.md` 或 `.github/harness/spec/{feature}-spec.md`）。
+  - **若不存在規格文件**：Agent 將自動強制鎖定在 `analyze-spec` 路由，先執行需求確認並於所屬專案產出規格文件。**嚴禁在未產出 Spec 並取得使用者確認前直接撰寫前端/後端程式碼或生成 UI 畫面**。
+  - **微調與畫面調整**：必須指定或參照既有的 Spec 檔案。
 - `micro`：更新 `.github/worklog/agent-status.md` 為 `進行中`，記錄一行目的描述與使用的 Skill Route 即可。
 - `standard / heavy`：同時完成：
   - 在 `.github/harness/plan/{feature-name}-build-plan.md` 建立或更新本輪切片，並填寫 Skill Route。
@@ -80,17 +84,19 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 這個 repo 的 skills 位於 `.github/skills/`。任務符合某個 skill 時，必須先讀取對應 `SKILL.md`，再依其流程執行。
 
-**語意意圖判斷：** AI 應主動分析使用者的自然語言與潛在目的，將其對應至最合適的 Skill。不可僅依賴死板的「觸發關鍵字」；只要使用者的描述（如「網站變好慢」、「畫面跑版」、「幫我拆分任務」）在語意上符合某個 Skill 的解決範圍，就應該主動導向該 Skill。
+**語意意圖判斷：** AI 應主動分析使用者的自然語言與潛在目的，將其對應至最合適的 Skill。不可僅依發音或死板關鍵字；只要使用者的描述（如「網站變好慢」、「畫面跑版」、「幫我拆分任務」）在語意上符合某個 Skill 的解決範圍，就應該主動導向該 Skill。
+
+**強管轄路由：** 無論是新專案或既有專案的新需求（例如「幫我做一個登入頁面」、「開發 AI 功能」），若尚無現成 Spec 規格檔，**強制預設先導向 `analyze-spec` 產出規格**，確定後再接續 `design-architecture` ➔ `plan-build` ➔ `tdd-build`，不得直接跳入 `frontend-ui-engineering` 或純程式碼寫入。
 
 常見路由：
 
 - 「我有個點子但不知道怎麼開始」、「想探索方向」 ➔ `idea-refine`
 - 「這個需求合理嗎？」、「驗證痛點是否真實」 ➔ `problem-validation`
-- 「幫我分析這段需求並寫成 Spec」、「有客戶描述想轉為規格」 ➔ `analyze-spec`
+- 「幫我分析這段需求並寫成 Spec」、「有客戶描述想轉為規格」、「要做新功能/新頁面」 ➔ `analyze-spec`
 - 「準備開始架構設計」、「幫我切分模組與畫 Sitemap」 ➔ `design-architecture`
 - 「Spec 確認了，幫我規劃任務跟點數」、「產生開發 GitHub Issues」 ➔ `plan-build`
 - 「開始照著計畫寫程式」、「請實作 TASK-XXX」 ➔ `tdd-build` 或 `incremental-implementation`
-- 「幫我刻這個 UI」、「畫面跑版了需要調整」、「製作響應式元件」 ➔ `frontend-ui-engineering`
+- 「調整既有 UI 排版」、「畫面跑版了需要微調」、「製作響應式元件」 ➔ `frontend-ui-engineering` (已有 Spec 前提下)
 - 「寫單元測試」、「產出測試計畫或覆蓋率報告」 ➔ `write-tests`
 - 「程式報錯了」、「跑不起來幫我除錯」、「為什麼會出 exception」 ➔ `debugging-and-error-recovery`
 - 「幫我做 Code Review」、「檢查這支 PR 有沒有問題」 ➔ `code-review-and-quality`
@@ -122,6 +128,8 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - 狀態先於動作：任何工具呼叫、實作、驗證前，先更新對應活文件。
 - 活文件確保機制：寫入活文件（如 `worklog`、`plan` 等）時，若對應的資料夾或檔案不存在，必須主動建立（包含建立父目錄），不可因找不到路徑而跳過同步。
 - 單一切片工作循環：`standard / heavy` 任務一次只推進一個切片，依序完成宣告、執行、驗證與雙寫。
+- TDD 鐵律 (Iron Law of TDD)：進行功能實作時，嚴禁在未先看到失敗測試 (Red) 報告前撰寫任何產品實作代碼；測試失敗後只寫能讓測試通過的最少代碼 (Minimum Passing Code)。
+- 切片隔離策略：`standard / heavy` 任務切片建議使用輕量 Git Branch 隔離開發與驗證，成功後 merge 回主分支，失敗則直接刪除分支，免去維護複雜 Worktrees 的成本。
 - 活文件持續回寫：建置進行中也要同步 plan / worklog / agent status，不可只在結尾補寫。
 - 失敗即時阻塞：build/test/lint/typecheck 非 0 結束時，先把任務標為 `阻塞`，補 checkpoint，再進入除錯。
 - 薄垂直切片：優先小切片完成與驗證，避免大範圍重寫。
@@ -139,6 +147,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - `.github/worklog/agent-status.md` 已更新；`standard / heavy` 任務的 build plan 也已同步。
 - `Active Task` 已結束或提供清楚恢復入口 (Handoff Point)。
 - `standard` 任務已完成輕量 retro；`heavy` 任務已完成完整 retro。
+- **Living Spec 活文件同步**：若本輪修改涉及邏輯調整、API 合約或 UI 流程，必須同步回寫並更新對應專案中（如 `spec/` 或 `.github/harness/spec/`）的 Feature Spec 規格檔。
 - **Continuous Context Update (知識回寫)**：自我檢查對話過程中是否有新增的架構決策、限制或邊界情境。若有，強制要求更新 `CONTEXT.md` 或對應 ADR，絕不允許將知識遺留在對話歷史中。
 - **Stop Hook 守門員**：對於 `standard` 與 `heavy` 任務，檢查 Task Card 或 agent status 的尾端是否有明確的 `> [!CHECK] Cross-Model Review Approved by [Model/Role Name]` 標記。若無，強制攔截任務結案，並先執行 `cross-model-review` skill。
 

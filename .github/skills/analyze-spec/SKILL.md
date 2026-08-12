@@ -51,35 +51,24 @@ argument-hint: "輸入初始需求描述或貼上需求草稿"
 4. 標記高風險或高不確定性的需求項目
 5. 評估技術可行性（如有足夠資訊）
 
-### 第三階段：產出規格書
+### 第三階段：產出與分塊確認 (Bite-sized Spec Delivery)
 
-讀取 [規格書範本](./assets/spec-template.md)，將所有從前兩個階段收集到的資訊填入範本，產出完整的結構化文件，涵蓋：
+為了避免一次輸出過長內容導致閱讀疲勞，**必須先將 Spec 核心摘要分塊與使用者 Confirmation 簽核**：
 
-3. **利害關係人地圖**（Stakeholders）
-4. **專案概述**（Executive Summary）
-5. **背景與動機**（Background & Motivation）
-6. **目標與非目標**（Goals & Non-goals）
-7. **使用者與情境**（Users & Use Cases）
-8. **功能流程圖**（Functional Flowcharts）
-9. **功能需求**（Functional Requirements）
-10. **非功能需求**（Non-functional Requirements）
-11. **技術考量**（Technical Considerations）
-12. **里程碑規劃**（Milestones）
-13. **風險與假設**（Risks & Assumptions）
-14. **開放性問題**（Open Questions）
+1. **Bite-sized Summary（小區塊確認）**：在完整寫檔前，先輸出核心三區塊供使用者確認：
+   - **目標 (Goals) & 非目標 (Non-goals)**
+   - **核心使用者流程 (Happy Path Flow)**
+   - **高風險與關鍵限制 (Risks & Limits)**
+2. 取得使用者簽核 (Sign-off) 或反饋調整後，讀取 [規格書範本](./assets/spec-template.md) 填入完整細節。
 
-針對每個複雜度高或跨越多個角色的 Use Case，使用 Mermaid flowchart 繪製細部功能流程圖：
+完成填寫後，**必須將文件寫入對應專案檔案系統**：
 
-- **主流程**：正常路徑（Happy Path）從觸發點到完成
-- **替代流程**：主要的條件分支（if/else）
-- **例外流程**：錯誤處理與邊界情況
-- **多角色互動**：若涉及多個角色，使用 `sequenceDiagram` 或多個 swimlane 呈現
-
-完成填寫後，**必須將文件寫入專案檔案系統**：
-
-- 目標路徑：`docs/spec/{project-name}-spec-{YYYY-MM-DD}.md`
-- 若 `docs/spec/` 目錄不存在，先建立該目錄再寫入
-- 確認檔案已成功建立後，回報完整的檔案路徑
+- 目標路徑（依專案架構擇一，優先放在對應專案目錄）：
+  - 專案根目錄規格檔：`spec/{feature-name}-spec.md`
+  - Harness 規格目錄：`.github/harness/spec/{feature-name}-spec.md`
+  - 專案文件目錄：`docs/spec/{project-name}-spec-{YYYY-MM-DD}.md`
+- 若目錄不存在，先建立該目錄再寫入。
+- 確認檔案已成功建立後，回報完整的檔案路徑。
 
 ### 第四階段：驗證與確認
 

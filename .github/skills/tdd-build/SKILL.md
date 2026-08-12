@@ -14,9 +14,10 @@ argument-hint: "輸入要實作的任務 ID（如 TASK-001）或任務描述"
 
 ## 核心原則：Red → Green → Refactor (TDD Loop)
 
-> **[Guardrails] 絕對行為邊界**：
+> **[Guardrails] 絕對行為邊界 (Iron Law of TDD & Anti-Rationalization)**：
 > 1. **🔴 Red Phase**：你**絕對不允許**在這個階段寫出任何「非測試」的產品實作代碼。你必須先寫測試，並用終端機執行指令（如 `npm test`）來**證明該測試失敗**。
-> 2. **🟢 Green Phase**：在確認測試失敗前，禁止進入此階段。實作時，只寫能讓測試通過的**最少程式碼** (Minimum Passing Code)，不要超前部署或過度設計 (YAGNI)。
+> 2. **🚫 Anti-Rationalization (嚴禁自我合理化)**：你不得以「這改動很小」、「先寫程式碼比較好設計測試」、「稍後再補測試」等理由跳過 🔴 Red 階段。若你發現自己已經先撰寫了實作代碼，**必須將實作暫存或註解，將狀態還原至只有測試且測試失敗報告**，才可繼續。
+> 3. **🟢 Green Phase**：在確認測試失敗前，禁止進入此階段。實作時，只寫能讓測試通過的**最少程式碼** (Minimum Passing Code)，不要超前部署或過度設計 (YAGNI)。
 
 ---
 

@@ -44,9 +44,11 @@
 這個 workspace 將工作強制拆分為兩段，防止「先規劃、後續失聯」：
 
 - **Planning Workflow**：`analyze-spec` + `design-architecture` + `plan-build`。
+  - **Feature Spec 規格門禁**：新需求或功能開發必須先在對應所屬專案庫產出 Feature Spec 規格檔（例如專案庫的 `spec/{feature}-spec.md` 或 `.github/harness/spec/{feature}-spec.md`），取得 Sign-off 後才能進入任務拆解與實作。
 - **Execution Workflow**：`write-tests` + `tdd-build` (嚴格遵循 TDD Guardrails)，搭配 UI/Security 等技能。
 
 **[Guardrails] 進入 Execution 前的絕對邊界**：
+- 對應所屬專案中已存在確認過的 Feature Spec 規格檔。
 - 最新 build plan 或 agent status 已存在。
 - 至少一個任務處於 `In progress`，並有具體可執行的切片 (Slice)。
 - 已明確宣告本輪要更新的活文件 (Source of Truth)。
@@ -281,9 +283,9 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 2. **Task Card**：六個欄位已補齊（目標、範圍、驗收標準、更新檔案、驗證證據、阻塞/恢復入口）。
 3. **驗證證據**：至少一項符合任務類型的證據已落地。
 4. **文件同步 (SSOT)**：至少同步兩份活文件，其中必含 `agent-status.md`。
-5. **Continuous Context Update (知識回寫)**：對話期間產生的新知、限制與決策，必須主動更新至 `CONTEXT.md` 或 ADR，嚴禁遺留於 Ephemeral Conversation 中。
-6. **未完成項揭露**：延後事項已記錄原因與後續 Handoff 入口。
-7. **審核標記**：`standard` 與 `heavy` 任務必須有 `cross-model-review` 的通過標記。
+5. **Feature Spec 活文件同步**：若本輪異動涉及需求、邏輯變更、API 合約或 UI 流程，必須同步更新對應專案庫中的 Feature Spec 規格檔。
+6. **Continuous Context Update (知識回寫)**：對話期間產生的新知、限制與決策，必須主動更新至 `CONTEXT.md` 或 ADR，嚴禁遺留於 Ephemeral Conversation 中。
+7. **未完成項揭露**：延後事項已記錄原因與後續 Handoff 入口。
 
 ### 完成前檢查清單 (Shutdown Quick Check)
 
@@ -291,6 +293,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - [ ] plan 與 agent status 的任務狀態一致。
 - [ ] 更新檔案清單可對應實際修改內容。
 - [ ] 驗證證據已寫明結果，不是只有命令名稱。
+- [ ] Feature Spec 規格檔已同步完成（如有需求/邏輯異動）。
 - [ ] **Continuous Context Update 檢查**：確認無遺漏的重要架構與限制未回寫 `CONTEXT.md`。
 - [ ] 若有風險或限制，已在阻塞/恢復入口或備註中留下下一步。
 - [ ] diagnostics 無新錯誤，或已記錄例外原因。
