@@ -67,6 +67,39 @@ Execution Tracking:
 - NextStep:
 ```
 
+## Subagent 派發卡樣板 (Subagent Dispatch Card)
+
+當 Parent Agent 需將切片任務派發給 Subagent 執行時使用：
+
+```text
+Subagent Dispatch Card
+- 任務 ID 與切片：[TASK-XXX Slice Y]
+- 目標描述：[單一切片具體目標]
+- 異動檔案範圍：[明確限制可修訂檔案]
+- 驗收與測試指令：[如 npm test path/to/test.ts]
+- 行為約束：[TDD Red-Green 鐵律、不擴張範圍]
+- 上下文檔連結：[對應專案 spec/ 或 CONTEXT.md 連結]
+```
+
+## 輕量 Git 分支隔離操作範例
+
+```bash
+# 1. 建立並切換至切片臨時分支
+git checkout -b task/TASK-001-slice-1
+
+# 2. 進行 TDD 實作與驗證
+# ...
+
+# 3a. 驗證通過：切回主分支合併並刪除臨時分支
+git checkout main
+git merge task/TASK-001-slice-1
+git branch -d task/TASK-001-slice-1
+
+# 3b. 驗證失敗/重置：直接刪除臨時分支還原環境
+git checkout main
+git branch -D task/TASK-001-slice-1
+```
+
 ## Reset Decision 樣板
 
 ```text
