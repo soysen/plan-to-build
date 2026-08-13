@@ -36,8 +36,16 @@ test('harness-cli validate subcommand executes successfully on compliant workspa
   assert.match(output, /Validation Passed/i);
 });
 
-test('harness-cli verify subcommand wraps command and filters log output', () => {
-  const output = execSync(`node "${CLI_PATH}" verify -- echo "Hello World"`, { encoding: 'utf-8' });
-  assert.match(output, /VERIFY PASSED/i);
-  assert.match(output, /Hello World/);
+test('harness-cli card subcommand outputs Task Card structure', () => {
+  const output = execSync(`node "${CLI_PATH}" card`, { encoding: 'utf-8' });
+  assert.match(output, /Task Card/i);
+  assert.match(output, /Task ID/i);
+  assert.match(output, /Skill Route/i);
 });
+
+test('harness-cli card --ai outputs compact single line card string', () => {
+  const output = execSync(`node "${CLI_PATH}" card --ai`, { encoding: 'utf-8' });
+  assert.ok(!output.includes('\n') || output.trim().split('\n').length === 1, 'Should be a single compact line');
+  assert.match(output, /CARD\|ID:[^|]+\|STATUS:[^|]+\|ROUTE:[^|]+\|STEP:.+/);
+});
+

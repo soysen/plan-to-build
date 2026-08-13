@@ -7,6 +7,8 @@
     "harness:check": "node .github/scripts/harness-cli.js check",
     "harness:check:human": "node .github/scripts/harness-cli.js check --human",
     "harness:check:ai": "node .github/scripts/harness-cli.js check --ai",
+    "harness:card": "node .github/scripts/harness-cli.js card",
+    "harness:card:ai": "node .github/scripts/harness-cli.js card --ai",
     "harness:validate": "node .github/scripts/harness-cli.js validate",
     "harness:verify": "node .github/scripts/harness-cli.js verify --"
   },

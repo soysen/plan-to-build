@@ -125,6 +125,8 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 宣告任務完成前，上述欄位需補齊，並同步至少 `.github/worklog/agent-status.md`。`standard / heavy` 任務還需同步 build plan。
 
+> **[Token 優化與自動化提示]**：Agent 在任務啟動、切片更新或宣告完成時，應優先執行 `node .github/scripts/harness-cli.js card`（或 `npm run harness:card`），自動解析活檔案並格式化輸出 Task Card 區塊，避免手動拼接文字遺漏或浪費 Output Token。
+
 ## 全域行為規則
 
 - 狀態先於動作：任何工具呼叫、實作、驗證前，先更新對應活文件。
