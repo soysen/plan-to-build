@@ -9,6 +9,8 @@
 - `.github/harness/templates/build-plan.md`
 - 相關 skills 與 prompts
 
+> **[CLI 程式化驗證]**：本字典之枚舉值受 `npm run harness:validate`（或 `node .github/scripts/harness-cli.js validate`）程式化關卡自動約束，違規術語將導致驗證失敗並攔截任務結案。
+
 ## 狀態枚舉（中文）
 
 - 未開始：任務已定義，但尚未開始。
@@ -33,7 +35,7 @@
 
 - 新增或更新任務時，僅使用上述狀態。
 - 執行任何實作、查詢或驗證步驟前，必須先在對應活文件更新任務狀態（至少包含目前狀態與更新時間），再執行該步驟。
-- 任務標記為「已完成」時，必須同時補齊驗證證據。
+- 任務標記為「已完成」時，必須同時補齊驗證證據與通過 `harness-cli validate`。
 - 任務標記為「阻塞 / 暫停 / 需補充輸入」時，必須補齊 checkpoint 欄位：
   - 阻塞或中止原因
   - 已完成內容
