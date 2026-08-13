@@ -1,0 +1,21 @@
+{
+  "name": "plan-to-build",
+  "version": "1.1.0",
+  "description": "Plan-to-Build Agent Workflow & Harness Framework",
+  "scripts": {
+    "test": "node --test .github/scripts/harness-cli.test.js",
+    "harness:check": "node .github/scripts/harness-cli.js check",
+    "harness:check:human": "node .github/scripts/harness-cli.js check --human",
+    "harness:check:ai": "node .github/scripts/harness-cli.js check --ai",
+    "harness:validate": "node .github/scripts/harness-cli.js validate",
+    "harness:verify": "node .github/scripts/harness-cli.js verify --"
+  },
+  "keywords": [
+    "ai-agent",
+    "harness",
+    "workflow",
+    "token-optimization"
+  ],
+  "author": "",
+  "license": "MIT"
+}

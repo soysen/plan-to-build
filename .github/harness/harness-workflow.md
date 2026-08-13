@@ -16,6 +16,8 @@
 
 每次接到新需求時，建議依下列固定順序一次完成檢查，避免在多份文件間反覆跳轉。
 
+> **[Token 優化推薦]**：Agent 在啟動前可直接執行 `node .github/scripts/harness-cli.js check`（或 `npm run harness:check`），一次性完成 0~4 閘門與 Spec/Context 檔案存在性檢驗。
+
 0. **Project Environment Setup (專案環境閘門)**：確認專案是否已有 `CONTEXT.md` 或 Tracker Labels。若無，主動提議執行 `context-engineering` 初始化環境。
 1. **未完成任務閘門 (Active State Precedence)**：依 `AGENTS.md` 掃描，若有未完成任務，需先決策繼續或重置。
 2. **Input 收斂閘門 (Input Convergence)**：檢查 Task Card 啟動欄位是否完整；缺漏則標 `Needs input`。

@@ -33,6 +33,8 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 每次新需求都先依序通過下列閘門。純資訊查詢例外；若任務會讀檔、搜尋、編輯、驗證或回寫文件，視為工具序列任務，需走閘門。
 
+> **[Token 優化提示]**：Agent 啟動工具序列任務時，應優先執行 `node .github/scripts/harness-cli.js check`（或 `npm run harness:check`），以精簡 JSON 或 `--ai` 極短單行格式獲得 4 閘門診斷結果；回報人類或展示 Dashboard 時可附加 `--human` 參數產生圖形化報告。
+
 ### 1. 未完成任務閘門
 
 先掃描 active state：
