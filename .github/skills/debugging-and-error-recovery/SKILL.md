@@ -14,6 +14,13 @@ user-invocable: true
 > 2. **Reproduction Mandatory (重現優先)**：未寫出最小重現案例 (Reproduction Case) 之前，禁止對產品邏輯下手。
 > 3. **No Symptom Patching (禁止治標不治本)**：嚴禁使用空 catch (`try {} catch {}`) 吞掉錯誤、隨意補 `if (!x) return null` 假資料 fallback 或註解掉失敗的測試。修復必須針對 Root Cause。
 
+## 適用時機
+
+- 當執行或建置過中遭遇 RuntimeError, Build Error, Exception 或控制台報錯時。
+- 使用者要求「程式跑不起來，幫我排錯」、「為什麼這裡拋出 TypeError」時。
+- **Token 效益省耗目標 (Goal 3: Targeted Trimming)**：除錯時先抓取精準 Log 行數與 Traceback，嚴禁將整個專案全量文字傳入模型。
+
+
 ## 除錯流程 (Root-Cause Recovery Flow)
 
 ```

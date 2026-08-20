@@ -4,6 +4,8 @@ description: "分析專案需求並開立規格文件。語意情境：當使用
 argument-hint: "輸入初始需求描述或貼上需求草稿"
 ---
 
+# 需求規格分析 (analyze-spec)
+
 ## 核心原則與行為邊界
 
 > **[Guardrails] 絕對行為邊界**：
@@ -16,81 +18,64 @@ argument-hint: "輸入初始需求描述或貼上需求草稿"
 - 收到模糊的需求描述或草稿，需要結構化為正式規格 (PRD / RFC / Spec)
 - 需要評估需求可行性 (Technical Feasibility) 並識別潛在風險 (Risk Mitigation)
 - 開發前的團隊/利益關係人對齊 (Stakeholder Alignment)
+- **Token 效益省耗目標 (Goal 1: One-Pass)**：在開工前透過主動質詢 (Grill-Me) 一次釐清所有邊界與驗收條件，避免反覆修改導致 Token 暴增。
 
 若目前還不確定問題是否真實、目標使用者是否成立、或替代方案是否足夠差，先改用 `problem-validation`，不要把未驗證假設直接寫成 spec。
 
 ## 流程步驟
 
-### 第一階段：需求收集與釐清
+### 第一階段：需求收集與 `/grill-me` 主動質詢
 
-1. 請使用者提供原始需求（文字、圖片、草稿皆可）
-2. 根據 [需求問卷](./references/requirement-questions.md) 提出釐清問題
-3. 識別以下五個面向的缺口：
-   - **目標**：這個功能/專案解決什麼問題？
-   - **使用者**：誰會使用它？使用情境是什麼？
-   - **範疇**：哪些在範疇內？哪些明確排除？
-   - **成功標準**：如何判斷做完了、做對了？
-   - **限制條件**：技術、時間、預算、法規有哪些限制？
-4. 建立**利害關係人地圖**，確認每個人的角色：
-   - **決策者（Decider）**：對 spec 有最終核可權，意見衝突時拍板
-   - **諮詢者（Consulted）**：意見必須納入，但無核可權
-   - **知情者（Informed）**：需要被告知結果，但不參與決策
-   - 若決策者不明確，**停下來要求使用者指定**，不要繼續
+1. 請使用者提供原始需求（文字、圖片、草稿皆可）。
+2. **啟動 `/grill-me` 主動質詢 (3+ 輪深挖)**：
+   - **假設挑戰**：「這個功能在網路斷線、401 Token 過期或 Timeout 時有悲觀降級策略嗎？」
+   - **邊界與極限挑戰**：「當資料量超過 10,000 筆，或是使用者進行高頻連續點擊時，系統的反應策略為何？」
+   - **衝突與狀態挑戰**：「是否有任何併發寫入衝突？是否與既有 Store/API 結構發生牴觸？」
+3. 識別五個核心面向的缺口：**目標**、**使用者**、**範疇**、**成功標準**、**限制條件**。
 
-### 第二階段：需求分析
+### 第二階段：需求分析與分級 (Task Grading)
 
-1. 將需求拆分為：
-   - **功能性需求**（Functional Requirements）：系統「要做什麼」
-   - **非功能性需求**（Non-functional Requirements）：效能、安全性、可用性等
-2. 找出需求之間的相依性與衝突
-3. **處理需求衝突**：當不同利害關係人的需求互相矛盾時：
-   - 不要靜默選擇其中一個
-   - 明確呈現衝突：「A 要求 X，B 要求 Y，這兩者不能同時成立，因為 [原因]」
-   - 列出每個選擇的取捨，交給決策者選擇
-   - 在規格書中記錄決策過程與理由
-4. 標記高風險或高不確定性的需求項目
-5. 評估技術可行性（如有足夠資訊）
+1. 將需求拆分為**功能性需求**（Functional）與**非功能性需求**（Non-functional）。
+2. 進行任務分級（`micro` / `standard` / `heavy`），決定後續審查門檻。
+3. 處理需求衝突，將 Choice Vector 與 Trade-offs 條列交由 Decider 拍板。
 
-### 第三階段：產出與分塊確認 (Bite-sized Spec Delivery)
+### 第三階段：產出與小區塊確認 (Bite-sized Spec Delivery)
 
-為了避免一次輸出過長內容導致閱讀疲勞，**必須先將 Spec 核心摘要分塊與使用者 Confirmation 簽核**：
+1. 先輸出 **Bite-sized Summary**（目標 & 非目標、核心 Happy Path 流程、高風險限制）供使用者確認。
+2. 確認後寫入實體檔案：`.github/harness/spec/{feature-name}-spec.md` 或 `docs/spec/{project-name}-spec-{YYYY-MM-DD}.md`。
+3. **強制附帶 `Agent Handoff Protocol` 區塊**。
 
-1. **Bite-sized Summary（小區塊確認）**：在完整寫檔前，先輸出核心三區塊供使用者確認：
-   - **目標 (Goals) & 非目標 (Non-goals)**
-   - **核心使用者流程 (Happy Path Flow)**
-   - **高風險與關鍵限制 (Risks & Limits)**
-2. 取得使用者簽核 (Sign-off) 或反饋調整後，讀取 [規格書範本](./assets/spec-template.md) 填入完整細節。
+---
 
-完成填寫後，**必須將文件寫入對應專案檔案系統**：
+## 輸出規範與 Agent Handoff Protocol
 
-- 目標路徑（依專案架構擇一，優先放在對應專案目錄）：
-  - 專案根目錄規格檔：`spec/{feature-name}-spec.md`
-  - Harness 規格目錄：`.github/harness/spec/{feature-name}-spec.md`
-  - 專案文件目錄：`docs/spec/{project-name}-spec-{YYYY-MM-DD}.md`
-- 若目錄不存在，先建立該目錄再寫入。
-- 確認檔案已成功建立後，回報完整的檔案路徑。
+規格書必須實體寫入檔案，且必須包含標準交接協定（方便使用者隨時 Reset 視窗）：
 
-### 第四階段：驗證與確認
+```markdown
+---
+## 🤝 Agent Handoff Protocol (跨 Agent 交接協定)
 
-1. 告知使用者規格書已寫入哪個路徑
-2. 摘要說明文件的主要內容（5 行以內）
-3. 標記所有仍需確認的項目（用 `[待確認]` 標記），並列出待確認清單
-4. 列出所有**已記錄的需求衝突決策**，確認決策者知悉
-5. 說明 **Spec 版本管理協議**：
-   - **小幅修正**（文字澄清、補充說明）：直接更新，記入修訂記錄，版本號 patch（v0.1 → v0.1.1）
-   - **範疇變更**（新增/刪除需求）：需決策者重新確認，版本號 minor（v0.1 → v0.2）
-   - **目標變更**（Goals/Non-goals 修改）：等同重啟規格流程，版本號 major（v0.1 → v1.0）
-6. 建議下一步行動（排列優先序、技術選型、架構設計）
+### 1. 當前階段與狀態 (Current Stage)
+- **Workflow Phase**: `Spec Definition`
+- **Active Task ID**: `TASK-001`
+- **Status**: `Ready for Design`
 
-## 輸出規範
+### 2. 本階段完成事項與決策 (Completed Decisions)
+- [x] 完成 `/grill-me` 邊界質詢（確認採用悲觀鎖定與 401 自動刷新）
+- [x] 完成 Functional & Non-Functional 需求定案
+- [x] 完成 Non-Goals 範圍邊界劃定
 
-- 規格書以 Markdown 格式輸出
-- 每個需求項目需有唯一 ID（格式：`REQ-F001`、`REQ-NF001`）
-- 優先序標記：🔴 必要（Must have）/ 🟡 應有（Should have）/ 🟢 可有（Nice to have）
-- 流程圖以 Mermaid 語法內嵌在規格書中（````mermaid` 區塊），不使用外部圖片
-- 每個複雜度中以上的 Use Case（步驟超過 3 步，或涉及條件判斷）都需要配一張流程圖
-- 輸出路徑：`docs/spec/{project-name}-spec-{YYYY-MM-DD}.md`（`{YYYY-MM-DD}` 替換為當日日期）
-- **規格書必須實際寫入檔案，不可只在對話中顯示內容**
+### 3. 接手 Agent 執行指南 (Next Agent Actionable Guide)
+- **Recommended Skill**: `design-architecture`
+- **Next Target File**: `.github/harness/design/{feature-name}-architecture.md`
+- **Execution Criteria**:
+  - [ ] 依據本 Spec 第 3 節點劃分 API Service 與 Store 結構
+  - [ ] 繪製 Mermaid 狀態轉移圖與資料流向
+
+### 4. 關鍵風險與未決問題 (Risks & Open Questions)
+- ⚠️ 需注意第三方 API 頻率限制 (Rate Limit: 100 req/min)。
+---
+```
 
 ## 參考資源
 

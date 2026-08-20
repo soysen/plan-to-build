@@ -8,6 +8,42 @@
 
 ---
 
+## ⚡ Harness Workflow 核心架構與三招省 Token 實戰目標
+
+本專案 (`plan-to-build`) 為 **Harness Workflow 與 Agent Skills 的 Single Source of Truth (SSOT)**。我們參考影片《三招省 Token 的實戰方法》，在工作流中全面整合了以下 3 大省 Token 與 Agent 續航機制：
+
+1. **🎯 結構化「一次到位 (One-Pass)」**：
+   - 於 `idea-refine` 與 `analyze-spec` 階段導入 `/grill-me` 主動質詢與 Superpower 範本，開工前一次逼出邊界條件、輸入輸出與驗收標準，減少反覆修改耗費的 70%+ Token。
+2. **🔄 精準「Context 重啟與輕量交接 (Session Reset & Handoff)」**：
+   - 全流程落實 `Agent Handoff Protocol`（濃縮 15 行狀態快照）。使用者或 Agent 可隨時 **Reset 視窗開新對話**，只需載入快照即可零遺失銜接，擺脫攜帶數萬 Token 歷史訊息的讀取負擔。
+3. **✂️ 精準「Context 剪裁與分層審查 (Targeted Trimming & Model Routing)」**：
+   - 審查時僅讀取與處理異動 Diff 範圍；並依任務等級 (`micro`/`standard`/`heavy`) 進行審查分流。`micro` 小型改動自動豁免，只有關鍵切片動用第一線 `code-review-and-quality` 與第二線 `cross-model-review` 蓋章標記。
+
+```bash
+# 執行 Skill 規範自動化驗證
+node .github/scripts/validate-skills.js
+
+# 執行 Harness 狀態與閘門診斷
+node .github/scripts/harness-cli.js check --ai
+```
+
+---
+
+## 🛠️ Matt Pocock Productivity Skills 既有 Skill 整合矩陣
+
+本專案已將 [Matt Pocock Productivity Skills](https://github.com/mattpocock/skills/tree/main/skills/productivity) 的核心生產力理念，完全融合至既有的 Skill 體系中：
+
+| Matt Pocock Skill | 本專案對應與整合 Skill | 具體整合點與運作機制 |
+|---|---|---|
+| **`/grill-me`** | [`grill-me`](.github/skills/grill-me/SKILL.md) / [`analyze-spec`](.github/skills/analyze-spec/SKILL.md) | 沿決策樹進行 3+ 輪主動質詢，逼出隱藏假設與邊界條件，達成 One-Pass。 |
+| **`/handoff`** | [Agent Handoff Protocol](AGENTS.md) | 於全流程落實 15 行濃縮狀態快照卡，支援隨時 Session Reset 零遺失交接。 |
+| **`/to-questionnaire`** | [`analyze-spec`](.github/skills/analyze-spec/SKILL.md) | Phase 1 需求收集階段自動轉換為結構化問卷 (`references/requirement-questions.md`)。 |
+| **`/wait-what`** | [`debugging-and-error-recovery`](.github/skills/debugging-and-error-recovery/SKILL.md) / [`cross-model-review`](.github/skills/cross-model-review/SKILL.md) | 當預期與現實產生落差或控制台報錯時，強制 pause 進行理智檢視與假設對齊。 |
+| **`/writing-for-agents`** | [`context-engineering`](.github/skills/context-engineering/SKILL.md) / [`documentation-and-adrs`](.github/skills/documentation-and-adrs/SKILL.md) | 撰寫極適合 LLM 上下文讀取的結構化 Markdown（清晰 YAML 檔頭、Guardrail 警示、無歧義標題）。 |
+| **`/write-a-skill`** | [`using-agent-skills`](.github/skills/using-agent-skills/SKILL.md) | 引導建立符合 Frontmatter、Trigger Keyword 與 `validate-skills.js` 規範的新 Skill。 |
+
+---
+
 ## 產品生命週期地圖
 
 ```mermaid
