@@ -16,6 +16,7 @@
 ## Matt Pocock Productivity Skills 整合說明
 
 本專案已將 Matt Pocock 生產力 Skill 集成至既有 Skill 中：
+
 - `/grill-me` ➔ 整合至 `grill-me` 與 `analyze-spec`
 - `/handoff` ➔ 整合至 `Agent Handoff Protocol` 全流程
 - `/to-questionnaire` ➔ 整合至 `analyze-spec`
@@ -29,15 +30,15 @@
 
 AI 應依下列順序套用規則，不要把上層責任下放，也不要在下層重複定義上層規則。
 
-| 順位 | 檔案 | 角色 | 何時讀取 |
-| ---- | ---- | ---- | ---- |
-| 1 | `AGENTS.md`（本檔） | 跨工具規則層：原則、閘門、任務狀態義務 | 每次對話自動載入 |
-| 2 | `.github/copilot-instructions.md` | Copilot / VS Code 環境補充層：工具偏好、固定提問句、輸出格式 | 使用 Copilot 時自動載入 |
-| 3 | `.github/harness/harness-workflow.md` | 工作流程細節層：步驟、追蹤卡、閘門策略 | 需執行非平凡流程時 |
-| 4 | `.github/harness/harness-status-dictionary.md` | 任務狀態詞彙層 | 任何狀態變更時 |
-| 5 | `.github/skills/*/SKILL.md` | 特定 workflow / skill | 任務類型符合時 |
-| 6 | `.github/harness/plan/*`、`.github/worklog/*`、`.github/harness/spec/*` | 活文件：當下任務狀態、checkpoint、驗證證據 | 開始任務、恢復任務、回寫證據時 |
-| 7 | `.github/harness/templates/*` | 樣板層：標準輸出格式 | 需建立新計畫或報告時 |
+| 順位 | 檔案                                                                    | 角色                                                         | 何時讀取                                   |
+| ---- | ----------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
+| 1    | `AGENTS.md`（本檔）                                                     | 跨工具規則層：原則、閘門、任務狀態義務                       | 每次對話自動載入                           |
+| 2    | `.github/copilot-instructions.md`                                       | Copilot / VS Code 環境補充層：工具偏好、固定提問句、輸出格式 | 使用 Copilot 時自動載入                    |
+| 3    | `.github/harness/harness-workflow.md`                                   | 工作流程細節層：步驟、追蹤卡、閘門策略                       | 需執行非平凡流程時                         |
+| 4    | `.github/harness/harness-status-dictionary.md`                          | 任務狀態詞彙層                                               | 任何狀態變更時                             |
+| 5    | `.github/skills/*/SKILL.md`                                             | 特定 workflow / skill                                        | 任務類型符合時；依 Context Budget 分級載入 |
+| 6    | `.github/harness/plan/*`、`.github/worklog/*`、`.github/harness/spec/*` | 活文件：當下任務狀態、checkpoint、驗證證據                   | 開始任務、恢復任務、回寫證據時             |
+| 7    | `.github/harness/templates/*`                                           | 樣板層：標準輸出格式                                         | 需建立新計畫或報告時                       |
 
 ---
 
@@ -54,7 +55,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
    - **Feature Spec 硬性檢查**：若專案庫無既有 Spec 檔，**強制鎖定 `analyze-spec` 路由**，先產出 Spec 並取得確認。
    - 更新 `agent-status.md`（與 `standard/heavy` 之 build plan）標為 `進行中` 即可動工。
 
-- `micro`：更新 `.github/worklog/agent-status.md` 為 `進行中`，記錄一行目的描述與使用的 Skill Route 即可。
+- `micro`：更新 `.github/worklog/agent-status.md` 為 `進行中`，記錄一行目的描述與使用的 Skill Route 即可；預設不讀完整 Skill，除非修改 Agent 規則、提交、或使用者明確要求。
 - `standard / heavy`：同時完成：
   - 在 `.github/harness/plan/{feature-name}-build-plan.md` 建立或更新本輪切片，並填寫 Skill Route。
   - 更新 `.github/worklog/agent-status.md` 的 `Active Task` 為 `進行中`。
@@ -63,9 +64,15 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 
 ## Skill 路由與對應關係
 
-這個 repo 的 skills 位於 `.github/skills/`。任務符合某個 skill 時，必須先讀取對應 `SKILL.md`，再依其流程執行。
+這個 repo 的 skills 位於 `.github/skills/`。任務符合某個 skill 時，依 Context Budget 分級載入，避免小任務消耗完整流程文件：
+
+- `micro`：通常只記錄 Skill Route，不讀完整 `SKILL.md`；若該 skill 是唯一安全守門員（如 commit、agent customization、security）才讀必要段落。
+- `standard`：讀對應 `SKILL.md` 的目標、流程、驗證或紅旗段落；不要整份展開與任務無關的範例。
+- `heavy`：完整讀取主要 skill；跨領域時再讀第二 skill，並用 plan / status 摘要降低後續重讀。
+- 同一 conversation 已讀過的 skill 不重讀；沿用既有摘要，只有當任務邊界改變時補讀相關段落。
 
 **語意意圖判斷與強管轄路由：**
+
 - 「我有個點子但不知道怎麼開始」、「想探索方向」 ➔ `idea-refine` (Superpower 結構化發想)
 - 「幫我 Grill 一下」、「質詢這個需求/架構」、「挑戰這個設計的盲點」、「/grill-me」 ➔ `grill-me` (3 輪主動質詢與壓力測試)
 - 「幫我分析這段需求並寫成 Spec」、「要做新功能/新頁面」 ➔ `analyze-spec` (Superpower Spec + `/grill-me` 質詢)

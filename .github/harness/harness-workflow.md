@@ -16,12 +16,12 @@
 
 為降低 Agent 執行流程時的 Prompt 認知負擔與 Token 消耗，本專案提供程式化 CLI 工具 (`.github/scripts/harness-cli.js` 或 `npm run harness:*`) 負責狀態校驗與格式自動化：
 
-| 子指令 | 完整命令 | 作用與呼叫時機 | 通道選項 |
-| --- | --- | --- | --- |
-| `check` | `npm run harness:check` | 0~4 閘門與 Spec/Context 檔案存在性檢驗（啟動時呼叫） | `--ai` (省流單行), `--human` (儀表板) |
-| `card` | `npm run harness:card` | 解析活文件並自動輸出 Task Card 樣板（啟動/切片/結案時呼叫） | `--ai` (極簡卡片), `--human` (排版面板) |
-| `validate` | `npm run harness:validate` | 校驗 `agent-status.md` 狀態詞彙與 Task Card 合規性（結案前呼叫） | 自動檢查非 0 攔截 |
-| `verify` | `npm run harness:verify -- <cmd>` | 執行測試/建置命令，自動判定 Exit Code 並裁切 Log（驗證時呼叫） | 成功留 5 行 / 失敗留 10 行 |
+| 子指令     | 完整命令                          | 作用與呼叫時機                                                   | 通道選項                                |
+| ---------- | --------------------------------- | ---------------------------------------------------------------- | --------------------------------------- |
+| `check`    | `npm run harness:check`           | 0~4 閘門與 Spec/Context 檔案存在性檢驗（啟動時呼叫）             | `--ai` (省流單行), `--human` (儀表板)   |
+| `card`     | `npm run harness:card`            | 解析活文件並自動輸出 Task Card 樣板（啟動/切片/結案時呼叫）      | `--ai` (極簡卡片), `--human` (排版面板) |
+| `validate` | `npm run harness:validate`        | 校驗 `agent-status.md` 狀態詞彙與 Task Card 合規性（結案前呼叫） | 自動檢查非 0 攔截                       |
+| `verify`   | `npm run harness:verify -- <cmd>` | 執行測試/建置命令，自動判定 Exit Code 並裁切 Log（驗證時呼叫）   | 成功留 5 行 / 失敗留 10 行              |
 
 ## 啟動檢查清單 (Startup Checklist)
 
@@ -32,6 +32,23 @@
 3. **任務分級與啟動 (Execution Gate)**：診斷為 `GATE:PASS` 時，將任務寫入 plan 與 agent-status (`In progress`)，即可開始實作。
 
 若 CLI 診斷未通過，先補齊缺失條件，不可越級執行 (No Bypassing)。
+
+## Context Budget 與 Skill 載入分級
+
+為了讓流程明確性與 token 成本取得平衡，Skill / Harness 文件採分級載入：
+
+| 任務等級   | Harness 動作                                       | Skill 載入                                                 | 狀態文件                             | 目標                         |
+| ---------- | -------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------ | ---------------------------- |
+| `micro`    | 跑 `check --ai`；必要時 `validate`                 | 預設不讀全文，只記錄 Skill Route；安全守門員任務讀必要段落 | `agent-status.md` 一行目的與驗證證據 | 保持 1~2 個工具回合內完成    |
+| `standard` | 跑 `check --ai`，按需使用 `card --ai` / `validate` | 只讀對應 skill 的流程、驗證、紅旗段落                      | `agent-status.md`；有切片時更新 plan | 明確流程，不展開無關範例     |
+| `heavy`    | 完整啟動閘門、plan、checkpoint、review             | 完整讀主要 skill；跨領域補讀第二 skill                     | plan + `agent-status.md` 雙寫        | 用文件換取可恢復性與風險控制 |
+
+補充規則：
+
+- 純資訊查詢不載入 Skill，也不更新狀態文件。
+- 同一 conversation 已讀過的 Skill 不重讀；沿用摘要，只有新風險或新階段出現時補讀相關段落。
+- 若 skill 文件很長，先讀目錄/標題附近段落；只有驗證策略、風險邊界或流程不明時再擴大。
+- Commit、security、agent customization 這類守門員任務即使是 `micro`，仍需讀必要安全段落。
 
 ## 純資訊查詢 vs 工具序列邊界
 
@@ -57,11 +74,12 @@
 - **Execution Workflow**：`write-tests` + `tdd-build` (嚴格遵循 TDD Guardrails)，搭配 UI/Security 等技能。
 
 **[Guardrails] 進入 Execution 前的絕對邊界**：
+
 - 對應所屬專案中已存在確認過的 Feature Spec 規格檔。
 - 最新 build plan 或 agent status 已存在。
 - 至少一個任務處於 `In progress`，並有具體可執行的切片 (Slice)。
 - 已明確宣告本輪要更新的活文件 (Source of Truth)。
-若不滿足上述條件，**禁止**直接跳到 coding；必須退回 Planning Workflow 補齊。
+  若不滿足上述條件，**禁止**直接跳到 coding；必須退回 Planning Workflow 補齊。
 
 **Handoff (交接)**：
 規劃到建置的交接，請嚴格遵守 `AGENTS.md` 的 Task Card Schema。
@@ -75,12 +93,13 @@
 
 同份 Task Card Schema 採漸進式填寫。Agent 更新 `agent-status.md` 後，**應執行 `npm run harness:card -- --ai` 輸出卡片**，避免在對話中手動重複拼接大段 Markdown 樣板：
 
-| 階段 | 必填欄位 | 目的 |
-| --- | --- | --- |
-| 啟動階段 | 目標、範圍 (In/Out)、驗收標準 | 確保任務可啟動且可判斷是否進入實作 |
-| 切片/完成階段 | 更新檔案、驗證證據、阻塞/恢復入口 | 確保任務可驗證、可交接、可恢復 |
+| 階段          | 必填欄位                          | 目的                               |
+| ------------- | --------------------------------- | ---------------------------------- |
+| 啟動階段      | 目標、範圍 (In/Out)、驗收標準     | 確保任務可啟動且可判斷是否進入實作 |
+| 切片/完成階段 | 更新檔案、驗證證據、阻塞/恢復入口 | 確保任務可驗證、可交接、可恢復     |
 
 規則：
+
 - 啟動階段任一欄位缺漏時，狀態應為 `Needs input`。
 - 宣告完成前，六個欄位需補齊且經 `npm run harness:validate` 檢查驗證通過。
 
@@ -95,6 +114,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 文字樣板詳見 `.github/harness/harness-workflow-appendix.md`。
 
 規則：
+
 - 任何工具呼叫、實作、驗證或文件回寫步驟開始前，先更新任務狀態，再執行步驟。
 - `CurrentStep`：目前正在做的單一步驟（動詞開頭，避免模糊描述）。
 - `Evidence`：目前可驗證的證據（已讀文件、已跑指令、已更新檔案、browser/runtime 結果）。
@@ -114,10 +134,12 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 4. 完成雙寫後，才能執行下一個命令或進入下一個切片。
 
 禁止模式：
+
 - 先連續執行多個切片，最後一次補寫。
 - 只更新 plan 不更新 agent-status，或反之。
 
 最小核對條件：
+
 - plan 最新切片狀態與 agent-status 最新 `CurrentStep` 描述一致。
 - `Evidence` 可對應實際命令或檔案變更。
 
@@ -130,6 +152,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - 狀態一致性：plan / worklog / agent status 的狀態與證據必須一致。
 
 證據至少要落在一份活文件，且包含：
+
 - 狀態轉換（例如 `In progress` -> `Blocked` -> `In progress`）。
 - 每次轉換對應的 `CurrentStep / Evidence / NextStep`。
 - 可直接重啟工作的恢復入口。
@@ -152,10 +175,12 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - `重置`：終止原未完成任務，清空未完成佇列，建立新任務再開始。
 
 補充硬性規則：
+
 - 未完成上述決策前，不得直接切換到新任務。
 - 若發現已切到新任務但舊任務未結案，必須立即停下並回補舊任務狀態與 checkpoint。
 
 若選 `重置`，最小動作如下：
+
 - 將原未完成任務標記為 `Reset`（或移入已重置歸檔段落）。
 - 在 plan / worklog / agent status 記錄「重置原因、已完成、已驗證、未完成放棄項」。
 - 新增新任務 ID、切片目標、驗證策略與文件同步目標。
@@ -180,6 +205,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - 接替策略：新任務如何承接（新任務 ID、第一個切片、驗證策略、文件同步目標）。
 
 填寫規則：
+
 - 三欄不可空白；若無內容請填 `N/A（原因）`。
 - 接替策略必須可直接執行，至少包含「下一步動作 + 要更新的活文件」。
 
@@ -209,11 +235,13 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 為避免 plan 在開發中持續膨脹，整理動作不延後到收尾，而是在 workflow 執行期間由切片閘門自動觸發。
 
 自動觸發時機（任一成立即執行）：
+
 - 每次切片驗證完成後（切片閘門）。
 - 主 plan 行數超過 500 行。
 - 已完成任務詳情超過 5 筆。
 
 自動整理最小步驟：
+
 1. 先更新任務狀態與 `Execution Tracking`（CurrentStep / Evidence / NextStep）。
 2. 將超出保留窗口的已完成任務詳情搬到 `.github/harness/plan/archive/`。
 3. 主 plan 僅保留 active 視窗 + 最近 5 個已完成任務詳情 + archive 入口。
@@ -221,6 +249,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 5. 在 agent status 證據欄回寫本次整理動作與結果。
 
 失敗處理：
+
 - 若當輪無法完成整理，任務狀態不得直接標 `Completed`；需標示原因與恢復入口。
 
 ## Input 審核規則（繼續前必檢）
@@ -228,6 +257,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 當狀態是 `Needs input` 或有決策缺口時，先做 input 審核再決定繼續/重置。
 
 最小審核清單：
+
 - 完整性：是否回答了目標、範圍、限制與成功標準。
 - 一致性：是否與現有 spec/plan/worklog 衝突。
 - 可執行性：是否足以產生下一個可實作切片。
@@ -235,6 +265,7 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 - 風險性：是否牽涉權限、資料暴露、不可逆操作或高成本重工。
 
 審核結果處置：
+
 - 全部通過：可 `繼續`。
 - 缺 1-2 項且可快速補：標記 `Needs input`，待補後繼續。
 - 關鍵項未通過（完整性/一致性/可執行性）：建議 `重置` 並開新任務。
@@ -262,13 +293,14 @@ Skill 或 workflow 執行期間，agent 必須定期輸出追蹤卡，不可只�
 
 若任務未另外指定驗證策略，預設至少達到下表要求：
 
-| 任務類型 | 最小驗證要求 |
-| --- | --- |
-| DOC（文件/流程） | 文件一致性檢查（跨 AGENTS / workflow / plan / agent status） + VS Code diagnostics |
-| FE（前端/UI） | VS Code diagnostics + 至少一次 browser/runtime smoke（DOM snapshot 或等價證據） |
-| 高風險變更（安全/權限/不可逆） | 對應類型最小驗證 + 安全檢查（輸入邊界、權限、資料暴露） |
+| 任務類型                       | 最小驗證要求                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------- |
+| DOC（文件/流程）               | 文件一致性檢查（跨 AGENTS / workflow / plan / agent status） + VS Code diagnostics |
+| FE（前端/UI）                  | VS Code diagnostics + 至少一次 browser/runtime smoke（DOM snapshot 或等價證據）    |
+| 高風險變更（安全/權限/不可逆） | 對應類型最小驗證 + 安全檢查（輸入邊界、權限、資料暴露）                            |
 
 補充：
+
 - 若只執行部分驗證，必須在證據中記錄未執行項與原因。
 - 若任務有既有測試命令，優先沿用專案既定命令。
 
