@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { judgeSlice } = require('./slice-judge');
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../');
 const AGENT_STATUS_PATH = path.join(WORKSPACE_ROOT, '.github/worklog/agent-status.md');
@@ -94,6 +95,12 @@ function runValidate() {
       if (!VALID_STATUSES.has(statusVal)) {
         errors.push(`agent-status.md: Invalid status term '${statusVal}'`);
       }
+    }
+
+    // Binary Slice Judge Verification
+    const sliceResult = judgeSlice(content);
+    if (sliceResult.result !== 'PASS') {
+      errors.push(`[Slice Judge FAIL] ${sliceResult.reason}`);
     }
   } else {
     errors.push('agent-status.md: File does not exist');

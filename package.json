@@ -3,7 +3,11 @@
   "version": "1.1.0",
   "description": "Plan-to-Build Agent Workflow & Harness Framework",
   "scripts": {
-    "test": "node --test .github/scripts/harness-cli.test.js",
+    "test": "node --test .github/scripts/harness-cli.test.js .github/scripts/assert-phase.test.js .github/scripts/fde-phase.test.js .github/scripts/eval-router.test.js .github/scripts/slice-judge.test.js",
+    "phase": "node .github/scripts/fde-phase.js",
+    "assert:phase": "node .github/scripts/assert-phase.js",
+    "eval:router": "node .github/scripts/eval-router.js",
+    "judge:slice": "node .github/scripts/slice-judge.js",
     "harness:check": "node .github/scripts/harness-cli.js check",
     "harness:check:human": "node .github/scripts/harness-cli.js check --human",
     "harness:check:ai": "node .github/scripts/harness-cli.js check --ai",

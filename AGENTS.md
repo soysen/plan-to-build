@@ -83,6 +83,12 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - 「幫我做 Code Review」、「檢查這支 PR 的 Diff」 ➔ `code-review-and-quality` (第一線異動審查)
 - 「用不同模型/視角盲測盲點」 ➔ `cross-model-review` (第二線 Approved 蓋章審查)
 
+**負向排除清單 (Negative Guardrails)：**
+
+- 當輸入包含「僅查詢」、「不要開案」、「說明概念」、「範例指令」時，強制路由為 `other`，嚴禁誤入 FDE / plan-to-build 流程。
+- 當輸入強調「別進 plan-to-build」、「不用跑開案流程」、「只是要看版本/代碼」時，強制路由為 `other`。
+- 當輸入為純問答、概念諮詢或指標查詢（例如「什麼是 Plan-to-Build？」、「解釋一下 TPR 跟 TNR」、「...的差別」）而非開案或切片實作指令時，強制路由為 `other`。
+
 ---
 
 ## Task Card Schema & Agent Handoff Protocol

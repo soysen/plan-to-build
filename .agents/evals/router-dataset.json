@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "prompt": "我想做會員註冊 POC，幫我跑 FDE 流程",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 2,
+    "prompt": "請規劃電商結帳流程並產出 Spec",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 3,
+    "prompt": "我有個新點子想做 AI 客服系統，幫我啟動 plan-to-build 開案",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 4,
+    "prompt": "準備開發新功能：多語系切換，請幫我分析需求並建立建置計畫",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 5,
+    "prompt": "我們要重構購物車模組，幫我從 Phase 1 開始規劃",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 6,
+    "prompt": "客戶提出了一批使用者故事，請轉化為 PRD 與架構設計",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 7,
+    "prompt": "啟動 SaaS 儀表板開發專案，進行規格分析與任務切片",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 8,
+    "prompt": "請幫我把這個即時聊天需求寫成標準 Spec 並跑 FDE 流程",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 9,
+    "prompt": "我想建構一個文章發布平台，請協助梳理需求與驗收條件",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 10,
+    "prompt": "需要開立新功能規格：Stripe 訂閱金流整合，請推進 plan-to-build",
+    "expected_intent": "plan-to-build",
+    "category": "positive"
+  },
+  {
+    "id": 11,
+    "prompt": "不要開案，只要列出 Prisma 常用指令",
+    "expected_intent": "other",
+    "category": "explicit_negative"
+  },
+  {
+    "id": 12,
+    "prompt": "我只想查詢連線字串，別進 plan-to-build",
+    "expected_intent": "other",
+    "category": "explicit_negative"
+  },
+  {
+    "id": 13,
+    "prompt": "僅查詢 Docker 啟動指令，不要建立任何規格文件或建置計畫",
+    "expected_intent": "other",
+    "category": "explicit_negative"
+  },
+  {
+    "id": 14,
+    "prompt": "請給我 React hooks 的範例代碼就好，不用跑開案流程",
+    "expected_intent": "other",
+    "category": "explicit_negative"
+  },
+  {
+    "id": 15,
+    "prompt": "不要啟動 FDE 流程，我只是要看 package.json 的版本號",
+    "expected_intent": "other",
+    "category": "explicit_negative"
+  },
+  {
+    "id": 16,
+    "prompt": "什麼是 Plan-to-Build？",
+    "expected_intent": "other",
+    "category": "boundary_consultation"
+  },
+  {
+    "id": 17,
+    "prompt": "解釋一下評測指標中的 TPR 跟 TNR 是什麼意思？",
+    "expected_intent": "other",
+    "category": "boundary_consultation"
+  },
+  {
+    "id": 18,
+    "prompt": "如何看待 TDD 在前端開發中的成本與效益？",
+    "expected_intent": "other",
+    "category": "boundary_consultation"
+  },
+  {
+    "id": 19,
+    "prompt": "為什麼微服務架構不一定適合初創團隊？說明概念",
+    "expected_intent": "other",
+    "category": "boundary_consultation"
+  },
+  {
+    "id": 20,
+    "prompt": "介紹一下 Next.js App Router 與 Pages Router 的差別",
+    "expected_intent": "other",
+    "category": "boundary_consultation"
+  }
+]
