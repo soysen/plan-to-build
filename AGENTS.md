@@ -77,6 +77,7 @@ AI 應依下列順序套用規則，不要把上層責任下放，也不要在�
 - 「幫我 Grill 一下」、「質詢這個需求/架構」、「挑戰這個設計的盲點」、「/grill-me」 ➔ `grill-me` (3 輪主動質詢與壓力測試)
 - 「幫我分析這段需求並寫成 Spec」、「要做新功能/新頁面」 ➔ `analyze-spec` (Superpower Spec + `/grill-me` 質詢)
 - 「準備開始架構設計」、「幫我切分模組與畫 Sitemap」 ➔ `design-architecture`
+- 「需要畫出版級架構圖/拓撲圖」、「產生純 HTML+SVG 規格圖」 ➔ `diagram-design`
 - 「Spec 確認了，幫我規劃任務與切片」 ➔ `plan-build` (含 Issue 建立)
 - 「開始照著計畫寫程式」、「請實作 TASK-XXX」 ➔ `tdd-build` (TDD 漸進式切片)
 - 「程式報錯了」、「跑不起來幫我除錯」 ➔ `debugging-and-error-recovery`

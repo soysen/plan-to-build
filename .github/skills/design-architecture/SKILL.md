@@ -26,11 +26,11 @@ user-invocable: true
 提取功能需求清單、技術限制與非功能門檻，確認有無待決決策。
 
 ### 第二階段：Sitemap 與模組切割 (SA)
-- 產出 Mermaid `graph TD` Sitemap 頁面結構。
-- 繪製分層系統架構圖 (Mermaid `graph LR`) 與 Use Case Sequence Diagram。
+- 產出 Sitemap 頁面結構：日常草稿使用 Mermaid `graph TD`；正式交付或高階系統可選用 `diagram-design` 產出出版級 HTML+SVG。
+- 繪製分層系統架構圖與 Use Case Sequence Diagram（遵循 `diagram-design` 出版級 HTML+SVG 或 Mermaid）。
 
 ### 第三階段：詳細設計 (SD) & 資料庫/API 合約
-- 詳細 DB Schema 設計 (ER Diagram 與欄位表)。
+- 詳細 DB Schema 設計 (ER Diagram / `diagram-design` Database Schema 與欄位表)。
 - API Endpoint 路由、Method 與 Request/Response Schema。
 
 ### 第四階段：系統遷移與 API 廢棄策略 (Migration & Deprecation)

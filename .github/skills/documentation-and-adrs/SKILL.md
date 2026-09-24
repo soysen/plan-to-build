@@ -35,6 +35,7 @@ ADR 捕捉重大技術決策背後的理由，是你能寫的最高價值文件�
 - 決定 API 架構（REST vs GraphQL vs tRPC）
 - 選擇建置工具、部署平台或基礎設施
 - 任何代價高昂且難以撤銷的決策
+- **架構決策視覺化**：重大決策涉及方案對比或技術選型時，建議運用 `diagram-design` 產出 Quadrant Matrix（四象限評估）或 Decision Tree 圖表。
 
 ### ADR 範本
 
