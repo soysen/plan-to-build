@@ -1,154 +1,76 @@
 ---
 name: retrospective-and-learnings
 description: "整理學習與流程改進 (Retro)。語意情境：當使用者表達「Sprint 結束了來做個 Retro」、「整理這次事故的 postmortem」、「這專案學到什麼」時觸發。"
-argument-hint: "描述要回顧的範圍與時間，例如：回顧這次會員邀請功能從 spec 到上線的整個流程"
+argument-hint: "描述要回顧的範圍與時間，例如：回顧這次功能從 spec 到上線的整個流程"
 user-invocable: true
+freedom: medium
+models-tested: [flash, sonnet, opus]
 ---
 
-# 回顧與學習沉澱
+# 回顧與學習沉澱 (retrospective-and-learnings)
 
-## 概覽
+## 目錄
+1. [硬性規則 (Must)](#硬性規則-must)
+2. [概覽與適用時機](#概覽與適用時機)
+3. [改善分流原則 (修環境不修代碼)](#改善分流原則-修環境不修代碼)
+4. [工作流程步驟](#工作流程步驟)
+5. [輸出規範與格式](#輸出規範與格式)
+6. [完成前檢核](#完成前檢核)
 
-回顧不是情緒總結，而是把經驗轉成下次可重用的決策、流程與 guardrails。這個 skill 的目標是回答：這次哪裡做對了、哪裡重複浪費、哪些風險其實可以更早看到、哪些 learnings 應該沉澱進 skill、文件或 checklist。
+## 硬性規則 (Must)
+1. **[MUST] 修環境不修程式碼**：聚焦於探討「Repo 環境或工作流缺失了什麼讓 Agent/開發者走彎路？」，禁止僅停留在代碼層次的心得抒發。
+2. **[MUST] 行動分流明確**：產出的改善項目必須明確標記去向：
+   - **機械性規則** ➔ 寫入 Linter, Validator 腳本或 CI。
+   - **架構裁量** ➔ 寫入 `CODING_STANDARDS.md`（按需由 Reviewer 載入）。
+   - **避免膨脹 AGENTS.md** ➔ 絕不隨意將瑣碎規則塞入全域每次載入之 `AGENTS.md`。
+3. **[MUST] 人類確認守門 (HITL)**：改善措施必須由人類勾選確認後方可正式落地。
 
-## 適用時機
+## 概覽與適用時機
+將實戰經驗轉化為下次可重用的工程守衛、流程檢查點與防護機制。
 
-- 一個功能從 spec 到上線結束後
-- Sprint / 里程碑結束後
-- 發布後想整理流程學習
-- incident / rollback / 大型 bug 修復後
-- 想把隱性知識變成文件、規則或 TODO
+### 適用時機
+- 功能完成上線或 Sprint 結束後。
+- 重大 Bug 排查或 Rollback 事故復盤後。
+- 排查出多次重複發生的踩坑模式時。
 
-**不適用時機：** 若當前仍在處理事故，先用 `debugging-and-error-recovery` 或 `post-deploy-monitoring`。若重點是產品 KPI 成效，先用 `post-launch-optimization`。
+## 改善分流原則 (修環境不修代碼)
+| 規則類型 | 正確歸宿 (Destination) | 理由 |
+| --- | --- | --- |
+| 命名格式、禁止特定 API、路徑檢查 | Linter / `validate-skills.js` / CI | 機器判定 0 Token 成本，百分之百可靠 |
+| 架構模式、深模組原則、設計裁量 | `CODING_STANDARDS.md` | 僅在 Code Review 階段閱讀，不污染日常上下文 |
+| 全域行為底線、四閘門、路由 | `AGENTS.md` | 僅放核心鐵律，嚴格限制篇幅 (≤ 80 行) |
 
-## 回顧模式
+## 工作流程步驟
+1. **DEFINE SCOPE**：定義回顧的專案範圍與時間窗口。
+2. **RECONSTRUCT TIMELINE**：梳理關鍵時間節點（Spec ➔ Design ➔ Build ➔ Verify）。
+3. **EXTRACT SIGNALS**：提取 Worked Well, Friction, Surprises, Repeat Risks。
+4. **IDENTIFY ROOT PATTERNS**：分析系統性根本原因（非個別人員問題）。
+5. **TURN INTO ACTIONS**：依據分流表產出 Action 清單並標註優先序與負責人。
+6. **WRITE DOCUMENT**：產出文件寫入 `docs/retrospective/retro-{YYYY-MM-DD}.md`。
 
-```text
-LIGHTWEIGHT  → 單功能或短 Sprint 回顧
-STANDARD     → 預設模式，完整回顧流程、風險、協作、技術與結果
-POSTMORTEM   → 針對事故、回滾或重大失敗做深度回顧
+## 輸出規範與格式
+
+```markdown
+## RETRO SUMMARY
+- **Scope**: [任務/功能名稱]
+- **Date**: YYYY-MM-DD
+
+### Worked Well (有效做法)
+- 採用 TDD 循序切片，有效避免隱藏 Bug。
+
+### Friction (摩擦與阻礙)
+- 某些 Skill 缺乏目錄，導致長對話模型注意力漂移。
+
+### Root Pattern (根本模式)
+- 文件超過 100 行時缺乏導引。
+
+### Actions & Routing (改善去向)
+- [ ] **[CI/Script]** 在 validate-skills.js 加入 TOC 結構斷言
+- [ ] **[Standards]** 在 CODING_STANDARDS.md 加入深模組規範
 ```
 
-## 工作流程
-
-```text
-1. DEFINE SCOPE        → 定義回顧範圍與時間窗
-2. RECONSTRUCT TIMELINE → 重建發生了什麼
-3. EXTRACT SIGNALS     → 找出成功、失誤、摩擦、意外
-4. IDENTIFY ROOT PATTERNS → 不只記事件，要找可重複模式
-5. TURN LEARNINGS INTO ACTION → 產出具體改善項目
-6. WRITE RETRO         → 寫成回顧文件與後續動作
-```
-
-### 第一階段：定義範圍
-
-明確說明：
-
-- 回顧的是哪個功能 / 里程碑 / 事故
-- 回顧時間窗
-- 涵蓋哪些角色（PM / 設計 / 前端 / 後端 / QA / 維運）
-- 這次想回答的核心問題是什麼
-
-### 第二階段：重建時間線
-
-至少列出：
-
-- spec / 設計開始時間
-- 重要決策點
-- 實作與驗證節點
-- 發布與監控節點
-- 問題發生與修正節點
-
-不要直接跳結論，先把時間線對齊。
-
-### 第三階段：抽取訊號
-
-分成四類整理：
-
-- **Worked Well**：這次哪些做法明顯有效
-- **Friction**：哪些流程讓速度或品質下降
-- **Surprises**：哪些事是事前沒預料到的
-- **Repeat Risks**：哪些問題若不處理，下次還會再出現
-
-### 第四階段：找出根本模式
-
-不要只寫「這次測試太晚補」，而要追問：
-
-- 為什麼會晚補？
-- 是 skill 缺引導？規劃少了 gate？還是 ownership 不清？
-- 這是偶發事件還是系統性問題？
-
-常見模式：
-
-- scope drift
-- 決策者不清楚
-- rollout 太晚準備
-- spec 與真實需求落差
-- 測試策略缺席
-- 文件不同步
-- 觀測性不足
-
-### 第五階段：把學習轉成行動
-
-每個 learning 都要轉成明確動作，而不是停在心得：
-
-- 更新哪個 skill
-- 更新哪份文件
-- 新增哪個 checklist / template / SOP
-- 建立哪個 TODO / issue
-- 下次在哪個 gate 提前檢查
-
-### 第六階段：產出文件
-
-必須寫入：
-
-- `docs/retrospectives/retro-{YYYY-MM-DD}.md`
-
-若 `docs/retrospectives/` 不存在，先建立目錄。
-
-文件至少包含：
-
-1. 範圍與背景
-2. 事件時間線
-3. Worked Well
-4. Friction / Failures
-5. Root Patterns
-6. Learnings
-7. Concrete Actions
-8. Owner / Priority / Due Date
-
-## 建議輸出格式
-
-```text
-RETRO SUMMARY
-=============
-Scope: member-invite launch
-Mode: STANDARD
-
-Worked Well:
-- 提前使用 feature flag，降低 rollout 風險
-
-Friction:
-- spec 中沒有明確定義邀請過期規則，導致後端與前端重工
-
-Root Pattern:
-- 邊界情境沒有在 spec gate 被強制檢查
-
-Action:
-- 更新 analyze-spec checklist，加入「時效 / 過期 / 重送」邊界題目
-```
-
-## 鏈結規則
-
-- 若需要把新 learnings 寫回 skill：更新對應 skill 檔案
-- 若發現 backlog：切到 `create-issues`
-- 若發現問題其實是產品方向錯誤：回到 `problem-validation` 或 `analyze-spec`
-- 若發現是上線後成效問題：切到 `post-launch-optimization`
-
-## 反模式
-
-- 只寫感想，不產出 action
-- 把單次偶發問題過度制度化
-- 只檢討人，不檢討流程與結構
-- 回顧沒有 owner、優先序或到期日
-- Learnings 沒有回寫到 skill、模板或文件
+## 完成前檢核
+- [ ] 回顧聚焦於流程、工具與環境改善。
+- [ ] 每個 Action 標註明確去向（CI / Standards / Agents）。
+- [ ] 產出文件寫入 `docs/retrospective/` 或相關目錄。
+- [ ] 待辦事項標有優先序，待人類決策採納。

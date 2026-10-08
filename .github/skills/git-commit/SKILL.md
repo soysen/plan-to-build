@@ -1,154 +1,87 @@
 ---
 name: git-commit
-description: "執行 git 提交與版號管理。語意情境：當使用者表達「完成任務了，幫我 commit」、「準備提交程式碼並升級版號」時觸發。"
-argument-hint: "輸入提交類型與描述，如：feat TASK-001 實作登入 API，或留空由 skill 自動推斷"
+description: "執行 git 提交、PR 說明生成、版號管理與發佈檢核。語意情境：當使用者表達「完成任務了，幫我 commit」、「產生 PR 說明」、「準備提交並升級版號發佈」時觸發。"
+argument-hint: "輸入提交類型與描述，如：feat(auth): 實作登入 API，或留空自動推斷"
+user-invocable: true
+freedom: low
+models-tested: [flash, sonnet, opus]
 ---
 
-# Git 提交與版號管理
+# Git 提交、PR 生成與發佈管理 (git-commit)
+
+## 目錄
+1. [硬性規則 (Must)](#硬性規則-must)
+2. [使用時機](#使用時機)
+3. [流程步驟](#流程步驟)
+4. [PR 說明生成規範 (PR Description)](#pr-說明生成規範-pr-description)
+5. [版號升級與發佈檢核](#版號升級與發佈檢核)
+6. [延伸參考資源](#延伸參考資源)
+7. [完成前檢核](#完成前檢核)
+
+## 硬性規則 (Must)
+1. **[MUST] 敏感資訊防外洩**：暫存區若偵測到 `.env`、密鑰檔案 (`*.pem`, `*.key`)，必須立即終止操作並警告。
+2. **[MUST] PR 具備三大板塊**：產出 PR 描述時必須包含「視覺化摘要」、「具體命令證據 (Evidence)」、「合併危險度 (Merge Danger)」三大板塊，拒絕口頭保證。
+3. **[MUST] 絕不自動強制推送**：嚴禁未經使用者授權自動執行 `git push` 或使用 `--force` / `--no-verify`。
+4. **[MUST] 評估單向門/雙向門**：發佈與合併前必須評估本次變更是否可逆（參考 [發佈與上線檢核清單](./references/release-and-launch-checklist.md)）。
 
 ## 使用時機
-
-- 完成一個任務（`TASK-XXX`）或功能開發，需要提交程式碼
-- 需要產出符合 Conventional Commits 規範的 commit message
-- 所有變更提交完畢後，需要自動升版 `package.json`
-
----
+- 完成功能開發或問題修復，需要提交程式碼。
+- 需要產生標準 Conventional Commits 訊息（不強制也不需帶 Task ID）。
+- 準備開啟 Pull Request 需要高品質說明。
+- 變更完成後需要自動升級語意化版號 (SemVer)。
 
 ## 流程步驟
 
-### 第一階段：檢查工作區狀態
-
-執行以下指令，確認目前變更：
-
+### 第一階段：檢查工作區與安全掃描
 ```bash
 git status
 git diff --stat
 ```
+確認無敏感設定檔與未預期檔案被暫存。
 
-1. 列出：
-   - **已暫存（Staged）** 的檔案
-   - **未暫存（Unstaged）** 的已修改檔案
-   - **未追蹤（Untracked）** 的新檔案
-2. 若工作區乾淨（無任何變更），告知使用者並結束
-
-### 第二階段：整理暫存區
-
-依使用者意圖決定暫存範圍：
-
-**全部暫存（預設）**：
-
+### 第二階段：暫存與 Conventional Commit
 ```bash
 git add -A
+git commit -m "<type>(<scope>): <subject>" -m "<body>"
 ```
 
-**部分暫存**（若使用者指定特定檔案或目錄）：
+## PR 說明生成規範 (PR Description)
+若需要建立 PR 描述，請輸出以下高資訊密度範本：
 
+```markdown
+## 1. 視覺化摘要 (Summary)
+<!-- 以最小視覺化圖表、Mermaid 流程圖或呼叫樹呈現 -->
+```mermaid
+flowchart LR
+  Client --> API[/api/v1/auth] --> DB[(User Table)]
+```
+
+## 2. 具體客觀證據 (Evidence)
+- **修改前**：`npm test` 失敗 (Exit code: 1, Cannot find module)
+- **修改後**：`npm test` 通過 (Exit code: 0, 32 passed)
+
+## 3. 合併危險度評估 (Merge Danger)
+- **變更類型**：`雙向門 (Two-Way Door)` 或 `單向門 (One-Way Door)`
+- **風險說明**：無破壞性 Schema 變更，可安全 Revert。
+```
+
+## 版號升級與發佈檢核
+當所有變更提交且工作區乾淨時：
+1. 依照變更決定版號：Major (`BREAKING`), Minor (`feat`), Patch (`fix`)。
+2. 更新 `package.json` 中的 `version` 欄位。
+3. 建立版本提交與 Git Tag：
 ```bash
-git add {檔案路徑或目錄}
+git add package.json
+git commit -m "chore: release v{new-version}"
+git tag -a "v{new-version}" -m "Release v{new-version}"
 ```
 
-暫存後，再次執行 `git diff --cached --stat` 確認暫存內容，並顯示給使用者確認。
-
-### 第三階段：產出 Commit Message
-
-依照 [Commit Message 規範](./references/commit-convention.md) 自動推斷或產出 message：
-
-**格式**：
-
-```
-<type>(<scope>): <subject>
-
-[body - 可選]
-
-[footer - 可選，如 BREAKING CHANGE 或 closes #issue]
-```
-
-**自動推斷規則**：
-
-1. 從暫存的檔案路徑與內容判斷 `type`（feat / fix / test / refactor 等）
-2. 從目錄結構或任務 ID 推斷 `scope`
-3. 產出簡潔的 `subject`（≤ 72 字元，動詞開頭，中文或英文均可）
-4. 若有對應的 `TASK-XXX`，加入 footer：`Refs: TASK-XXX`
-
-**範例 message**：
-
-```
-feat(auth): 實作使用者登入 API
-
-- 新增 POST /api/v1/auth/login 端點
-- 實作 JWT access token 發放邏輯
-- 加入登入失敗的錯誤處理
-
-Refs: TASK-003
-```
-
-向使用者展示預計使用的 commit message，確認後再執行。
-
-### 第四階段：執行提交
-
-```bash
-git commit -m "<type>(<scope>): <subject>" -m "<body>" -m "<footer>"
-```
-
-若 commit message 僅有一行：
-
-```bash
-git commit -m "<type>(<scope>): <subject>"
-```
-
-確認提交成功（顯示 commit hash 與統計）。
-
-### 第五階段：檢查是否需要升版
-
-提交完成後，執行以下判斷：
-
-```bash
-git status
-```
-
-**若工作區乾淨（無其他待提交變更）**：
-→ 進入 **第六階段：升版 `package.json`**
-
-**若仍有未提交的變更**：
-→ 告知使用者目前剩餘的變更清單，**不升版**，結束並建議繼續提交
-
-### 第六階段：升版 package.json
-
-1. 讀取 `package.json`，取得目前版號（`version` 欄位）
-2. 依照 [語意化版本規範](./references/commit-convention.md#版號升版規則) 決定升版類型：
-
-   | 本次提交包含          | 升版類型 | 範例              |
-   | --------------------- | :------: | ----------------- |
-   | `BREAKING CHANGE`     |  Major   | `1.0.0` → `2.0.0` |
-   | `feat`                |  Minor   | `1.0.0` → `1.1.0` |
-   | `fix` / `perf` / 其他 |  Patch   | `1.0.0` → `1.0.1` |
-
-3. 計算新版號並更新 `package.json` 的 `version` 欄位
-4. 若專案為 Monorepo（根目錄有多個 `package.json`），詢問使用者要升版哪些套件
-5. 提交版號變更：
-
-   ```bash
-   git add package.json
-   # Monorepo 時加入所有受影響的 package.json
-   git commit -m "chore: bump version to {new-version}"
-   ```
-
-6. 告知使用者：
-   - 舊版號 → 新版號
-   - 升版類型（Major / Minor / Patch）
-   - 升版 commit hash
-
----
-
-## 安全守則
-
-- **絕不自動執行** `git push`，提交後僅在本地操作
-- 不修改已發布（已 push）的 commit（不執行 `--amend` 或 `--force`）
-- 若偵測到 `.env`、私鑰檔案（`*.pem`、`*.key`）在暫存區，**立即停止**並警告使用者
-- 不跳過 pre-commit hooks（不使用 `--no-verify`）
-
----
-
-## 參考資源
-
+## 延伸參考資源
 - [Commit Message 規範與版號升版規則](./references/commit-convention.md)
+- [發佈與上線檢核清單](./references/release-and-launch-checklist.md)
+
+## 完成前檢核
+- [ ] 無機密憑證或 `.env` 被加入暫存區。
+- [ ] Commit message 符合 Conventional Commits 格式。
+- [ ] PR 說明包含摘要、客觀執行日誌證據與危險度評估。
+- [ ] 本地變更已乾淨提交，無隨意自動 push。

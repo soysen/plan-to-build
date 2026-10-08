@@ -12,7 +12,13 @@ const usageHeadings = [
   '## When to Use',
   '## Skill 選擇指南',
   '## Core Principles',
-  '## Use case specific references'
+  '## Use case specific references',
+  '## 概覽與適用時機',
+  '## 概覽與使用時機',
+  '## 使用時機與核心循環',
+  '## 使用時機與輸入來源',
+  '## 適用時機與流程圖',
+  '## 適用時機與豁免規則'
 ];
 
 const evidenceMarkers = [
@@ -28,7 +34,8 @@ const evidenceMarkers = [
   'Evidence',
   'Documentation',
   'CLI',
-  'Best Practices'
+  'Best Practices',
+  '完成前檢核'
 ];
 
 function fail(message) {
@@ -64,7 +71,8 @@ if (!fs.existsSync(skillsDir)) {
   for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
 
-    const skillPath = path.join(skillsDir, entry.name, 'SKILL.md');
+    const skillDir = path.join(skillsDir, entry.name);
+    const skillPath = path.join(skillDir, 'SKILL.md');
     if (!fs.existsSync(skillPath)) {
       fail(`${entry.name} is missing SKILL.md`);
       continue;
@@ -72,6 +80,7 @@ if (!fs.existsSync(skillsDir)) {
 
     const relPath = path.relative(root, skillPath);
     const content = fs.readFileSync(skillPath, 'utf8');
+    const lines = content.split('\n');
     const frontmatter = parseFrontmatter(content, relPath);
 
     if (frontmatter.name !== entry.name) {
@@ -84,6 +93,48 @@ if (!fs.existsSync(skillsDir)) {
 
     if (!/Use when|使用時機：|觸發關鍵字：|觸發/.test(frontmatter.description || '')) {
       fail(`${relPath} description must include usage triggers`);
+    }
+
+    // 1. Freedom 分級檢查
+    if (!['low', 'medium', 'high'].includes(frontmatter.freedom)) {
+      fail(`${relPath} must specify valid freedom in frontmatter (low | medium | high)`);
+    }
+
+    // 2. Models-tested 檢查
+    if (!frontmatter['models-tested']) {
+      fail(`${relPath} must specify models-tested in frontmatter`);
+    }
+
+    // 3. TOC 目錄檢查
+    if (lines.length > 50 && !content.includes('## 目錄')) {
+      fail(`${relPath} (length: ${lines.length}) must include '## 目錄' (TOC)`);
+    }
+
+    // 4. Must 硬性規則檢查（必須存在且在前 40 行之內）
+    const mustIndex = lines.findIndex(l => l.includes('## 硬性規則 (Must)'));
+    if (mustIndex === -1) {
+      fail(`${relPath} must include '## 硬性規則 (Must)' section`);
+    } else if (mustIndex > 40) {
+      fail(`${relPath} '## 硬性規則 (Must)' must be placed within first 40 lines (found at line ${mustIndex + 1})`);
+    }
+
+    // 5. 完成前檢核清單檢查
+    if (!content.includes('## 完成前檢核')) {
+      fail(`${relPath} must include '## 完成前檢核' checklist at end`);
+    }
+    const checkboxes = content.match(/- \[[ x]\]/g) || [];
+    if (checkboxes.length < 2) {
+      fail(`${relPath} must contain at least 2 verification checkboxes`);
+    }
+
+    // 6. 內部 References / Assets 檔案存在性檢查
+    const internalLinks = content.matchAll(/\]\(((\.\/references\/|\.\/assets\/)[^)]+)\)/g);
+    for (const linkMatch of internalLinks) {
+      const relTarget = linkMatch[1];
+      const absTarget = path.resolve(skillDir, relTarget);
+      if (!fs.existsSync(absTarget)) {
+        fail(`${relPath} contains broken link: ${relTarget} (target does not exist)`);
+      }
     }
 
     if (!usageHeadings.some(heading => content.includes(heading))) {
@@ -101,6 +152,6 @@ if (!fs.existsSync(skillsDir)) {
     count++;
   }
   if (!process.exitCode) {
-    console.log(`✅ Skill validation passed for ${count} skills in .github/skills`);
+    console.log(`✅ Skill validation passed for ${count} modern skills in .github/skills`);
   }
 }

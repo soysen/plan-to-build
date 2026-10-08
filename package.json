@@ -1,6 +1,6 @@
 {
   "name": "plan-to-build",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Plan-to-Build Agent Workflow & Harness Framework",
   "scripts": {
     "test": "node --test .github/scripts/harness-cli.test.js .github/scripts/assert-phase.test.js .github/scripts/fde-phase.test.js .github/scripts/eval-router.test.js .github/scripts/slice-judge.test.js",

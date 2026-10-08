@@ -2,6 +2,16 @@
 
 這個 workspace 使用一套小型、本地的 workflow。它受到公開 skill packs 啟發，但已調整成適合 VS Code 與 GitHub Copilot 的形式。
 
+## 目錄
+- [為什麼這樣設計](#為什麼這樣設計)
+- [步驟地圖與 CLI 自動化工具箱](#harness-cli-自動化工具箱-harness-cli-toolchain)
+- [啟動檢查清單](#啟動檢查清單-startup-checklist)
+- [Context Budget 與 Skill 載入分級](#context-budget-與-skill-載入分級)
+- [雙階段工作流 (Planning vs Building)](#雙-workflow-規則-planning-vs-execution)
+- [切片雙寫強制與斷點](#切片進度即時同步雙寫強制)
+- [中斷與重置決策](#中斷決策繼續或重置)
+- [DoD 完成定義最低門檻](#完成定義-dod-最低門檻)
+
 ## 為什麼這樣設計
 
 `agent-skills` 顯示：當 skills 是有具體觸發條件與驗證關卡的流程文件時，效果最好。`gstack` 顯示：快速建置者需要角色分離；產品思考、工程審查、QA、安全、發布與回顧，不應該被壓成一次模糊的 coding pass。

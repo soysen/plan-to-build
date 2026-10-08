@@ -47,7 +47,6 @@
 | `{page-name}` | 特定頁面                     |
 | `config`      | 設定檔                       |
 | `deps`        | 依賴套件                     |
-| `task-{n}`    | 特定任務 ID（如 `task-001`） |
 
 Scope 可省略，但有助於快速定位變更範圍。
 
@@ -87,11 +86,11 @@ feat(order): 實作訂單建立 API
 
 ---
 
-## Footer 規則
+## Footer 規則（選填）
 
 | 用法              | 範例                                                             |
 | ----------------- | ---------------------------------------------------------------- |
-| 關聯任務          | `Refs: TASK-001`                                                 |
+| 關聯 Issue        | `Refs: #42`                                                      |
 | 關閉 GitHub Issue | `Closes #42`                                                     |
 | 不相容變更        | `BREAKING CHANGE: 移除 GET /api/users 的 page 參數，改用 cursor` |
 | 多個              | 每項各一行                                                       |

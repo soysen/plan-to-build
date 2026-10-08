@@ -4,9 +4,9 @@
 
 本 workspace 的正式規範與工作流程定義都放在 .github，請優先讀取以下檔案，不要在這裡維護第二份規則：
 
-1. `.github/copilot-instructions.md`
-2. `.github/skills/using-agent-skills/SKILL.md`
-3. `.github/skills/` 底下與目前任務對應的 `SKILL.md`
+1. `AGENTS.md`（主路標與啟動四閘門）
+2. `.github/copilot-instructions.md`
+3. `.github/skills/` 底下與目前任務對應的核心 `SKILL.md`
 
 工作方式：
 
