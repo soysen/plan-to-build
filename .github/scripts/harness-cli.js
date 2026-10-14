@@ -11,10 +11,12 @@ const HARNESS_PLAN_DIR = path.join(WORKSPACE_ROOT, '.github/harness/plan');
 const HARNESS_SPEC_DIR = path.join(WORKSPACE_ROOT, '.github/harness/spec');
 const PROJ_SPEC_DIR = path.join(WORKSPACE_ROOT, 'spec');
 const CONTEXT_PATH = path.join(WORKSPACE_ROOT, 'CONTEXT.md');
+const LOOP_STATE_PATH = path.join(WORKSPACE_ROOT, '.github/worklog/loop-state.json');
+const HISTORY_LOG_PATH = path.join(WORKSPACE_ROOT, '.github/worklog/history.jsonl');
 
 const VALID_STATUSES = new Set([
   '未開始', '進行中', '已完成', '阻塞', '暫停', '需補充輸入', '已重置',
-  'not started', 'in progress', 'completed', 'blocked', 'paused', 'needs input', 'reset', 'idle'
+  'not started', 'in progress', 'in_progress', 'completed', 'blocked', 'paused', 'needs input', 'reset', 'idle'
 ]);
 
 function runCheck(options = {}) {
@@ -202,6 +204,180 @@ function runCard(options = {}) {
   }
 }
 
+function runLoop(args) {
+  const sub = args[0] || 'status';
+
+  if (sub === 'status') {
+    let state = {
+      active: false,
+      taskId: 'none',
+      iteration: 0,
+      maxIterations: 3,
+      status: 'idle',
+      history: []
+    };
+    if (fs.existsSync(LOOP_STATE_PATH)) {
+      try {
+        state = JSON.parse(fs.readFileSync(LOOP_STATE_PATH, 'utf-8'));
+      } catch (e) {}
+    }
+    const isHuman = args.includes('--human');
+    const isAi = args.includes('--ai');
+    if (isHuman) {
+      console.log(`==========================================`);
+      console.log(`🔄 Loop Engineering Monitor (Human View)`);
+      console.log(`==========================================`);
+      console.log(`📌 Task ID         : ${state.taskId}`);
+      console.log(`📊 Loop Status     : ${state.status}`);
+      console.log(`🔢 Iteration       : ${state.iteration} / ${state.maxIterations}`);
+      console.log(`📜 History Entries : ${state.history ? state.history.length : 0}`);
+      if (state.history && state.history.length > 0) {
+        const last = state.history[state.history.length - 1];
+        console.log(`🎯 Last Hypothesis : ${last.hypothesis}`);
+        console.log(`🏁 Last Verdict    : ${last.verdict} (Exit ${last.exitCode})`);
+      }
+      console.log(`==========================================`);
+    } else if (isAi) {
+      console.log(`LOOP|TASK:${state.taskId}|ITER:${state.iteration}/${state.maxIterations}|STATUS:${state.status}|HISTORY:${state.history ? state.history.length : 0}`);
+    } else {
+      console.log(JSON.stringify(state, null, 2));
+    }
+    return;
+  }
+
+  if (sub === 'reset') {
+    if (fs.existsSync(LOOP_STATE_PATH)) {
+      fs.unlinkSync(LOOP_STATE_PATH);
+    }
+    console.log('✅ Loop state reset successfully.');
+    return;
+  }
+
+  if (sub === 'step') {
+    let hypothesis = 'Iterative refinement';
+    let cmd = 'npm test';
+    let max = 3;
+
+    for (let i = 1; i < args.length; i++) {
+      if (args[i].startsWith('--hypothesis=')) {
+        hypothesis = args[i].slice('--hypothesis='.length);
+      } else if (args[i] === '--hypothesis' && args[i + 1]) {
+        hypothesis = args[++i];
+      } else if (args[i].startsWith('--cmd=')) {
+        cmd = args[i].slice('--cmd='.length);
+      } else if (args[i] === '--cmd' && args[i + 1]) {
+        cmd = args[++i];
+      } else if (args[i].startsWith('--max=')) {
+        max = parseInt(args[i].slice('--max='.length), 10) || 3;
+      } else if (args[i] === '--max' && args[i + 1]) {
+        max = parseInt(args[++i], 10) || 3;
+      }
+    }
+
+    let activeTaskId = 'TASK-UNKNOWN';
+    if (fs.existsSync(AGENT_STATUS_PATH)) {
+      const match = fs.readFileSync(AGENT_STATUS_PATH, 'utf-8').match(/- ID:\s*([^\n]+)/);
+      if (match) activeTaskId = match[1].trim();
+    }
+
+    let state = {
+      active: true,
+      taskId: activeTaskId,
+      iteration: 0,
+      maxIterations: max,
+      status: 'active',
+      history: []
+    };
+
+    if (fs.existsSync(LOOP_STATE_PATH)) {
+      try {
+        state = JSON.parse(fs.readFileSync(LOOP_STATE_PATH, 'utf-8'));
+      } catch (e) {}
+    }
+
+    // Hard Stop Check: if iteration already reached maxIterations
+    if (state.iteration >= state.maxIterations) {
+      state.status = 'blocked';
+      fs.writeFileSync(LOOP_STATE_PATH, JSON.stringify(state, null, 2));
+
+      // Update agent-status.md to 阻塞
+      if (fs.existsSync(AGENT_STATUS_PATH)) {
+        let content = fs.readFileSync(AGENT_STATUS_PATH, 'utf-8');
+        content = content.replace(/- Status:\s*[^\n]+/, '- Status: 阻塞');
+        fs.writeFileSync(AGENT_STATUS_PATH, content);
+      }
+
+      console.error(`❌ [HARD STOP TRIGGERED] Maximum iterations (${state.maxIterations}) reached. Halting loop to prevent Token Black Hole.`);
+      process.exit(2);
+    }
+
+    // Execute step command
+    const res = spawnSync(cmd, { shell: true, encoding: 'utf-8', cwd: WORKSPACE_ROOT });
+    const exitCode = res.status !== null ? res.status : 1;
+    const isPass = exitCode === 0;
+
+    let diffSummary = '';
+    try {
+      const diffRes = spawnSync('git diff --stat', { shell: true, encoding: 'utf-8', cwd: WORKSPACE_ROOT });
+      diffSummary = diffRes.stdout ? diffRes.stdout.trim() : '';
+    } catch (e) {}
+
+    const iterationNum = state.iteration + 1;
+    const historyEntry = {
+      timestamp: new Date().toISOString(),
+      taskId: activeTaskId,
+      iteration: iterationNum,
+      hypothesis,
+      command: cmd,
+      exitCode,
+      verdict: isPass ? 'PASS' : 'FAIL',
+      diffSummary: diffSummary || 'none'
+    };
+
+    state.iteration = iterationNum;
+    state.history = state.history || [];
+    state.history.push(historyEntry);
+
+    try {
+      const worklogDir = path.dirname(HISTORY_LOG_PATH);
+      if (!fs.existsSync(worklogDir)) {
+        fs.mkdirSync(worklogDir, { recursive: true });
+      }
+      fs.appendFileSync(HISTORY_LOG_PATH, JSON.stringify(historyEntry) + '\n');
+    } catch (e) {}
+
+    if (isPass) {
+      state.status = 'converged';
+      fs.writeFileSync(LOOP_STATE_PATH, JSON.stringify(state, null, 2));
+      console.log(`✅ [LOOP CONVERGED] Goal achieved at iteration ${iterationNum}/${state.maxIterations}! (Exit 0)`);
+      process.exit(0);
+    } else {
+      if (iterationNum >= state.maxIterations) {
+        state.status = 'blocked';
+        fs.writeFileSync(LOOP_STATE_PATH, JSON.stringify(state, null, 2));
+
+        if (fs.existsSync(AGENT_STATUS_PATH)) {
+          let content = fs.readFileSync(AGENT_STATUS_PATH, 'utf-8');
+          content = content.replace(/- Status:\s*[^\n]+/, '- Status: 阻塞');
+          fs.writeFileSync(AGENT_STATUS_PATH, content);
+        }
+
+        console.error(`❌ [HARD STOP TRIGGERED] Iteration ${iterationNum}/${state.maxIterations} failed. Maximum attempts reached. State set to 阻塞.`);
+        process.exit(2);
+      } else {
+        state.status = 'active';
+        fs.writeFileSync(LOOP_STATE_PATH, JSON.stringify(state, null, 2));
+        console.warn(`⚠️ [LOOP STEP FAILED] Iteration ${iterationNum}/${state.maxIterations} failed (Exit ${exitCode}). Retrying next iteration.`);
+        process.exit(1);
+      }
+    }
+  }
+
+  console.error(`Unknown loop subcommand: ${sub}`);
+  console.error('Usage: harness-cli loop <status|step|reset> [--hypothesis="..."] [--cmd="..."] [--max=3]');
+  process.exit(1);
+}
+
 function main() {
   const args = process.argv.slice(2);
   const subcommand = args[0];
@@ -220,9 +396,11 @@ function main() {
     runValidate();
   } else if (subcommand === 'verify') {
     runVerify(args.slice(1));
+  } else if (subcommand === 'loop') {
+    runLoop(args.slice(1));
   } else {
     console.error(`Unknown subcommand: ${subcommand}`);
-    console.error('Usage: harness-cli <check|card|validate|verify> [--human|--ai|--compact]');
+    console.error('Usage: harness-cli <check|card|validate|verify|loop> [--human|--ai|--compact]');
     process.exit(1);
   }
 }

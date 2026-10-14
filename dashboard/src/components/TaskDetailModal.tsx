@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dialog } from '@base-ui/react/dialog';
-import { X, CheckCircle2, AlertTriangle, FileCode, Route, Target, ListChecks, PlayCircle } from 'lucide-react';
+import { X, CheckCircle2, AlertTriangle, FileCode, Route, Target, ListChecks, PlayCircle, RefreshCw } from 'lucide-react';
 import { ProjectWorkflow } from '../types/workflow';
 import { ResumeCopyButton } from './ResumeCopyButton';
 
@@ -147,6 +147,47 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ workflow, isOp
                       <p className="text-slate-300 text-xs mt-0.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800 leading-relaxed">
                         {activeTask.evidence}
                       </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Loop Engineering Monitor */}
+              {workflow.loopInfo && (
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-2 text-xs font-medium text-amber-400">
+                      <RefreshCw className="w-4 h-4 text-amber-400" />
+                      <span>Loop Engineering 迭代監控</span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/30">
+                      輪次：{workflow.loopInfo.iteration} / {workflow.loopInfo.maxIterations} ({workflow.loopInfo.status})
+                    </span>
+                  </div>
+
+                  {workflow.loopInfo.history && workflow.loopInfo.history.length > 0 && (
+                    <div className="space-y-2">
+                      {workflow.loopInfo.history.map((step, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-200">
+                              Round #{step.iteration}: {step.hypothesis}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                              step.verdict === 'PASS'
+                                ? 'bg-emerald-950 text-emerald-300 border-emerald-500/30'
+                                : 'bg-rose-950 text-rose-300 border-rose-500/30'
+                            }`}>
+                              {step.verdict} (Exit {step.exitCode})
+                            </span>
+                          </div>
+                          {step.diffSummary && step.diffSummary !== 'none' && (
+                            <span className="text-[11px] font-mono text-slate-400">
+                              Diff: {step.diffSummary}
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

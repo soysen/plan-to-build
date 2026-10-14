@@ -76,6 +76,27 @@ export interface ActiveBuildPlan {
   tasks?: BuildPlanTaskDetail[];
 }
 
+export interface LoopHistoryEntry {
+  timestamp: string;
+  taskId: string;
+  iteration: number;
+  hypothesis: string;
+  command: string;
+  exitCode: number;
+  verdict: 'PASS' | 'FAIL';
+  diffSummary?: string;
+  tokensEstimate?: number;
+}
+
+export interface LoopStateInfo {
+  active: boolean;
+  taskId: string;
+  iteration: number;
+  maxIterations: number;
+  status: 'idle' | 'active' | 'converged' | 'blocked';
+  history: LoopHistoryEntry[];
+}
+
 export interface ProjectWorkflow {
   projectName: string;
   projectPath: string;
@@ -84,6 +105,7 @@ export interface ProjectWorkflow {
   lastCompletedTask?: CompletedTaskInfo;
   buildPlanCount: number;
   activeBuildPlan?: ActiveBuildPlan;
+  loopInfo?: LoopStateInfo;
 }
 
 export interface GlobalMetrics {

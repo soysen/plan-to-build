@@ -49,3 +49,70 @@ test('harness-cli card --ai outputs compact single line card string', () => {
   assert.match(output, /CARD\|ID:[^|]+\|STATUS:[^|]+\|ROUTE:[^|]+\|STEP:.+/);
 });
 
+test('harness-cli loop status returns expected structure and supports views', () => {
+  const outputJson = execSync(`node "${CLI_PATH}" loop status`, { encoding: 'utf-8' });
+  const result = JSON.parse(outputJson.trim());
+  assert.ok('iteration' in result);
+  assert.ok('maxIterations' in result);
+  assert.ok('status' in result);
+
+  const outputHuman = execSync(`node "${CLI_PATH}" loop status --human`, { encoding: 'utf-8' });
+  assert.match(outputHuman, /Loop Engineering Monitor/i);
+
+  const outputAi = execSync(`node "${CLI_PATH}" loop status --ai`, { encoding: 'utf-8' });
+  assert.match(outputAi, /LOOP\|TASK:[^|]+\|ITER:\d+\/\d+\|STATUS:[^|]+/);
+});
+
+test('harness-cli loop step handles success and records history', () => {
+  // Reset first
+  execSync(`node "${CLI_PATH}" loop reset`, { encoding: 'utf-8' });
+
+  // Run a successful step
+  const output = execSync(`node "${CLI_PATH}" loop step --hypothesis="Test Pass" --cmd="node -e 'process.exit(0)'" --max=3`, { encoding: 'utf-8' });
+  assert.match(output, /LOOP CONVERGED/i);
+
+  // Check state
+  const statusOut = execSync(`node "${CLI_PATH}" loop status`, { encoding: 'utf-8' });
+  const state = JSON.parse(statusOut.trim());
+  assert.equal(state.status, 'converged');
+  assert.equal(state.iteration, 1);
+  assert.equal(state.history.length, 1);
+  assert.equal(state.history[0].verdict, 'PASS');
+
+  // Clean up
+  execSync(`node "${CLI_PATH}" loop reset`, { encoding: 'utf-8' });
+});
+
+test('harness-cli loop step triggers hard stop at max iterations and prevents token black hole', () => {
+  const agentStatusPath = path.resolve(__dirname, '../../.github/worklog/agent-status.md');
+  const backup = fs.readFileSync(agentStatusPath, 'utf-8');
+
+  try {
+    execSync(`node "${CLI_PATH}" loop reset`, { encoding: 'utf-8' });
+
+    // Step 1: fails
+    try {
+      execSync(`node "${CLI_PATH}" loop step --hypothesis="Attempt 1" --cmd="node -e 'process.exit(1)'" --max=2`, { encoding: 'utf-8' });
+    } catch (err) {
+      assert.equal(err.status, 1);
+    }
+
+    // Step 2: fails -> max reached -> triggers hard stop (exit code 2)
+    try {
+      execSync(`node "${CLI_PATH}" loop step --hypothesis="Attempt 2" --cmd="node -e 'process.exit(1)'" --max=2`, { encoding: 'utf-8' });
+      assert.fail('Should have exited with code 2 on hard stop');
+    } catch (err) {
+      assert.equal(err.status, 2, 'Should exit with code 2 for Hard Stop');
+      assert.match(err.stderr || err.stdout, /HARD STOP/i);
+    }
+
+    // Verify agent-status.md was updated to 阻塞
+    const updatedStatus = fs.readFileSync(agentStatusPath, 'utf-8');
+    assert.match(updatedStatus, /- Status:\s*阻塞/);
+  } finally {
+    fs.writeFileSync(agentStatusPath, backup);
+    execSync(`node "${CLI_PATH}" loop reset`, { encoding: 'utf-8' });
+  }
+});
+
+

@@ -8,7 +8,8 @@ import {
   ActiveBuildPlan, 
   BuildPlanSlice, 
   TaskCardInfo, 
-  BuildPlanTaskDetail 
+  BuildPlanTaskDetail,
+  LoopStateInfo
 } from '../src/types/workflow.js';
 
 export function parseAgentStatusContent(content: string, statusFilePath: string): { activeTask: ActiveTaskInfo; lastCompletedTask?: CompletedTaskInfo } {
@@ -467,6 +468,17 @@ export function parseProjectWorkflow(statusFilePath: string): ProjectWorkflow | 
       }
     }
 
+    // Read loop state if available
+    const loopStatePath = path.join(projectPath, '.github', 'worklog', 'loop-state.json');
+    let loopInfo: LoopStateInfo | undefined = undefined;
+    if (fs.existsSync(loopStatePath)) {
+      try {
+        loopInfo = JSON.parse(fs.readFileSync(loopStatePath, 'utf-8'));
+      } catch {
+        // ignore parse error
+      }
+    }
+
     return {
       projectName,
       projectPath,
@@ -474,7 +486,8 @@ export function parseProjectWorkflow(statusFilePath: string): ProjectWorkflow | 
       activeTask,
       lastCompletedTask,
       buildPlanCount,
-      activeBuildPlan
+      activeBuildPlan,
+      loopInfo
     };
   } catch (err) {
     console.error(`Failed to parse ${statusFilePath}:`, err);
