@@ -36,9 +36,9 @@ models-tested: [flash, sonnet, opus]
 ## 改善分流原則 (修環境不修代碼)
 | 規則類型 | 正確歸宿 (Destination) | 理由 |
 | --- | --- | --- |
-| 命名格式、禁止特定 API、路徑檢查 | Linter / `validate-skills.js` / CI | 機器判定 0 Token 成本，百分之百可靠 |
-| 架構模式、深模組原則、設計裁量 | `CODING_STANDARDS.md` | 僅在 Code Review 階段閱讀，不污染日常上下文 |
-| 全域行為底線、四閘門、路由 | `AGENTS.md` | 僅放核心鐵律，嚴格限制篇幅 (≤ 80 行) |
+| 語法禁用、命名格式、屬性遺失、路徑檢查 | Linter / `*-guard.js` / CI | 機器判定 0 Token 成本，確定性阻斷不可逆疏失 |
+| 架構模式、深模組原則、審查與單雙向門裁量 | `code-review-and-quality` / `CODING_STANDARDS.md` | 僅在 Review 階段閱讀，不污染日常上下文 |
+| 尋址迷航、認知漂移、全域禁做負向邊界 | `AGENTS.md` (路標與 Not here 清單) | 僅放核心主路標與硬性邊界，篇幅維持 ≤ 60 行 |
 
 ## 工作流程步驟
 1. **DEFINE SCOPE**：定義回顧的專案範圍與時間窗口。

@@ -18,10 +18,12 @@ models-tested: [flash, sonnet, opus]
 6. [完成前檢核](#完成前檢核)
 
 ## 硬性規則 (Must)
-1. **[MUST] 阻擋性問題明確 (Clear Blockers)**：審查結論必須給出明確的二元狀態（`Approve` 或 `Request Changes`）。若有阻擋性問題（🔴 Must Fix），必須附帶修復範例。
-2. **[MUST] 拒絕淺模組與過度設計**：檢查變更中是否有無意義的包裝或超前設計，適時要求消除淺模組（參考 [程式碼簡化指南](./references/code-simplification-guide.md)）。
-3. **[MUST] 安全底線守門**：任何未參數化 SQL、未消毒 XSS、敏感資訊明文寫入，一律視為 🔴 Must Fix（參考 [安全性檢核清單](./references/security-checklist.md)）。
-4. **[MUST] 小型變更 (micro) 豁免**：單檔微調依靠 TypeScript / Lint 診斷與測試即可，禁止輸出無意義長篇審查報告。
+1. **[MUST] 標註單向門 / 雙向門風險 (One-way vs. Two-way Door)**：審查報告開頭必須明確標註變更爆炸半徑（🚨 單向門：核心架構/破壞性 API/底層資料庫變更；🚪 雙向門：局部 UI/樣式/可逆無副作用調整）。
+2. **[MUST] 寫審分離與機械瑕疵直接修正 (Fix & Commit)**：發現非商業邏輯的機械性問題（排版、未用變數、型別標記、語法防呆遺漏），審查者應直接動手修正並 Commit，僅在商業意圖有疑義時留 Comment。
+3. **[MUST] 阻擋性問題明確 (Clear Blockers)**：審查結論必須給出明確的二元狀態（`Approve` 或 `Request Changes`）。若有阻擋性問題（🔴 Must Fix），必須附帶修復範例。
+4. **[MUST] 拒絕淺模組與過度設計**：檢查變更中是否有無意義的包裝或超前設計，適時要求消除淺模組（參考 [程式碼簡化指南](./references/code-simplification-guide.md)）。
+5. **[MUST] 安全底線守門**：任何未參數化 SQL、未消毒 XSS、敏感資訊明文寫入，一律視為 🔴 Must Fix（參考 [安全性檢核清單](./references/security-checklist.md)）。
+6. **[MUST] 小型變更 (micro) 豁免**：單檔微調依靠 TypeScript / Lint 診斷與測試即可，禁止輸出無意義長篇審查報告。
 
 ## 適用時機與豁免規則
 - 審查 PR 或完成 `standard`/`heavy` 任務切片時。
@@ -41,14 +43,19 @@ models-tested: [flash, sonnet, opus]
 ```markdown
 ## Code Review 結果
 
+### 🚪 風險評級
+- **門禁類型**：[🚨 單向門 (高風險不可逆) | 🚪 雙向門 (低風險可逆)]
+- **影響範圍**：核心資料模型 / 局部前端頁面
+
 ### 🔴 必須修改（阻擋合併）
 - `src/api/tasks.ts:42` — SQL 查詢未參數化，有 injection 風險
 
 ### 🟡 建議改進（不阻擋）
 - `src/services/taskService.ts:67` — N+1 查詢，建議使用 join 或 include
 
-### 🟢 值得肯定
+### 🟢 值得肯定 / 直接修復項目
 - 邊界條件處理完整，單元測試覆蓋齊全
+- [已自動修正] 移除未使用的引用與排版調整
 ```
 
 ## 延伸參考資源

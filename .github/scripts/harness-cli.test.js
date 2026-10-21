@@ -115,4 +115,98 @@ test('harness-cli loop step triggers hard stop at max iterations and prevents to
   }
 });
 
+test('validateSpecStructure rejects empty spec or spec missing required sections', () => {
+  const { validateSpecStructure } = require('./harness-cli');
+  
+  assert.equal(typeof validateSpecStructure, 'function', 'validateSpecStructure should be exported');
+
+  // Blank spec
+  const blankRes = validateSpecStructure('');
+  assert.equal(blankRes.valid, false);
+  assert.match(blankRes.errors[0], /Spec 內容為空/);
+
+  // Missing acceptance criteria
+  const noCriteria = `
+# Some Spec
+## 目標
+1. Goal A
+`;
+  const noCritRes = validateSpecStructure(noCriteria);
+  assert.equal(noCritRes.valid, false);
+  assert.ok(noCritRes.errors.some(e => e.includes('缺少驗收標準章節')));
+
+  // Acceptance criteria < 2 items
+  const oneCriteria = `
+# Some Spec
+## 目標
+1. Goal A
+## 驗收標準
+- [ ] 只有一條標準
+`;
+  const oneCritRes = validateSpecStructure(oneCriteria);
+  assert.equal(oneCritRes.valid, false);
+  assert.ok(oneCritRes.errors.some(e => e.includes('驗收標準項目過少')));
+
+  // Valid spec with 2 criteria
+  const validSpec = `
+# Valid Spec
+## 目標
+達成系統穩定
+## 驗收標準
+- [ ] 標準一
+- [ ] 標準二
+`;
+  const validRes = validateSpecStructure(validSpec);
+  assert.equal(validRes.valid, true);
+  assert.equal(validRes.errors.length, 0);
+});
+
+test('validateDualWrite checks plan existence and active slices when task is in progress', () => {
+  const { validateDualWrite } = require('./harness-cli');
+  assert.equal(typeof validateDualWrite, 'function', 'validateDualWrite should be exported');
+
+  // Plan missing for active task
+  const missingPlanRes = validateDualWrite('TASK-999', '進行中', '/nonexistent/path');
+  assert.equal(missingPlanRes.valid, false);
+  assert.ok(missingPlanRes.errors.some(e => e.includes('找不到對應建置藍圖')));
+
+  // Plan exists but has no active slices while task is in progress
+  const donePlanContent = `
+# Build Plan
+- Status: done
+## Slices
+- [x] Slice 1: Done
+- [x] Slice 2: Also done
+`;
+  const noActiveSliceRes = validateDualWrite('TASK-114', '進行中', donePlanContent);
+  assert.equal(noActiveSliceRes.valid, false);
+  assert.ok(noActiveSliceRes.errors.some(e => e.includes('無進行中 [-] 或待處理 [ ] 切片')));
+
+  // Plan has active slice [-]
+  const inProgressPlanContent = `
+# Build Plan
+- Status: in_progress
+## Slices
+- [-] Slice 1: Working
+- [ ] Slice 2: Pending
+`;
+  const activePlanRes = validateDualWrite('TASK-114', '進行中', inProgressPlanContent);
+  assert.equal(activePlanRes.valid, true);
+  assert.equal(activePlanRes.errors.length, 0);
+});
+
+test('Project Guard hook executes *-guard.js during harness validate', () => {
+  const guardPath = path.resolve(__dirname, 'test-sample-guard.js');
+  try {
+    // Create failing guard
+    fs.writeFileSync(guardPath, 'console.error("GUARD TRIGGERED FAIL"); process.exit(1);');
+    assert.throws(() => {
+      execSync(`node "${CLI_PATH}" validate`, { encoding: 'utf-8' });
+    });
+  } finally {
+    if (fs.existsSync(guardPath)) fs.unlinkSync(guardPath);
+  }
+});
+
+
 

@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+
+/**
+ * Sample Project Guard Hook for Plan-to-Build
+ * 
+ * 下游專案可命名為 `<project-name>-guard.js`（例如 `eservice-guard.js`），
+ * 並放置於 `.github/scripts/` 目錄下。
+ * 當執行 `npm run harness:validate` 時，將自動調用此守門腳本進行 0-Token 確定性語法與規範攔截。
+ */
+
+const { execSync } = require('child_process');
+
+function runGuard() {
+  const errors = [];
+
+  // 1. 抓取當前工作目錄的 git diff
+  let diff = '';
+  try {
+    diff = execSync('git diff HEAD', { encoding: 'utf-8' });
+  } catch (err) {
+    // 若無 git repository 或 HEAD 則安全跳過
+    return;
+  }
+
+  // 2. 範例檢查：禁止在測試碼中殘留 test.only 或 it.only
+  if (/(?:test|it|describe)\.only\s*\(/i.test(diff)) {
+    errors.push('發現未清除之 test.only / it.only 殘留');
+  }
+
+  // 3. 範例檢查：禁止在提交中包含明文金鑰特徵
+  if (/(?:api[_-]?key|secret[_-]?token)\s*=\s*['"][a-zA-Z0-9_\-]{20,}['"]/i.test(diff)) {
+    errors.push('偵測到疑似明文金鑰/Token 特徵');
+  }
+
+  if (errors.length > 0) {
+    console.error('❌ Project Guard 違規阻斷:');
+    errors.forEach(e => console.error(`  - ${e}`));
+    process.exit(1);
+  }
+
+  process.exit(0);
+}
+
+if (require.main === module) {
+  runGuard();
+}
+
+module.exports = { runGuard };

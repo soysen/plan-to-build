@@ -36,6 +36,6 @@
 
 ## 全域行為鐵律
 1. **狀態先於動作**：任何工具調用與切片實作前，先雙寫更新活文件。
-2. **TDD 鐵律**：嚴禁在測試失敗 (Red) 報告出現前撰寫產品實作代碼。
-3. **審查與 Stop Hook**：`standard`/`heavy` 任務結案前需有 `code-review-and-quality` 審查；`heavy` 需有獨立審核標記：`> [!CHECK] Cross-Model Review Approved by [Model/Role Name]`。
+2. **TDD 鐵律與防假測試**：嚴禁在測試失敗 (Red) 報告出現前撰寫實作代碼；嚴禁同義反覆、讀取源碼字串或過度 Mock 之說謊測試。
+3. **審查與 Stop Hook**：`standard`/`heavy` 任務結案前需有 `code-review-and-quality` 審查（標註單/雙向門風險）；`heavy` 需有獨立審核標記：`> [!CHECK] Cross-Model Review Approved by [Model/Role Name]`。
 4. **交接協定**：重要階段產物尾端必須附帶 15 行標準 `Agent Handoff Protocol`。

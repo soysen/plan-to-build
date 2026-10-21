@@ -19,6 +19,81 @@ const VALID_STATUSES = new Set([
   'not started', 'in progress', 'in_progress', 'completed', 'blocked', 'paused', 'needs input', 'reset', 'idle'
 ]);
 
+function validateSpecStructure(specContent) {
+  const errors = [];
+  if (!specContent || typeof specContent !== 'string' || specContent.trim().length === 0) {
+    return { valid: false, errors: ['Spec 內容為空 (Empty spec content)'] };
+  }
+
+  const hasGoal = /##\s*[\d\.\s\w]*(?:目標|Goals?|摘要|Summary)/i.test(specContent);
+  if (!hasGoal) {
+    errors.push('缺少目標章節 (Missing ## 目標 or ## Goals)');
+  }
+
+  const hasCrit = /##\s*[\d\.\s\w\u4e00-\u9fa5]*(?:驗收標準|驗收|Acceptance Criteria|完成定義|Definition of Done|DoD|功能性需求|需求|Requirements)/i.test(specContent);
+  if (!hasCrit) {
+    errors.push('缺少驗收標準章節 (Missing ## 驗收標準 or ## Acceptance Criteria)');
+  } else {
+    const criteriaMatch = specContent.match(/##\s*[\d\.\s\w\u4e00-\u9fa5]*(?:驗收標準|驗收|Acceptance Criteria|完成定義|Definition of Done|DoD|功能性需求|需求|Requirements)([\s\S]*?)(?=\n##\s|$)/i);
+    const criteriaBody = criteriaMatch ? criteriaMatch[1] : '';
+    const items = criteriaBody
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => /^(?:[-*]|\d+\.|\|(?!\s*[-:]+\s*\|))\s*/.test(line) && !line.includes('需求 ID') && !line.includes('| --- |'));
+
+    if (items.length < 2) {
+      errors.push(`驗收標準項目過少 (需至少 2 條驗收項目，目前僅偵測到 ${items.length} 條)`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+function validateDualWrite(activeTaskId, status, planFilesOrDirOrContent) {
+  const errors = [];
+  const normalizedStatus = (status || '').trim().toLowerCase();
+
+  if (!activeTaskId || activeTaskId === 'none' || activeTaskId === 'N/A') {
+    return { valid: true, errors: [] };
+  }
+
+  let planContent = null;
+  if (typeof planFilesOrDirOrContent === 'string' && (planFilesOrDirOrContent.includes('## Slices') || planFilesOrDirOrContent.includes('# Build Plan'))) {
+    planContent = planFilesOrDirOrContent;
+  } else {
+    const planDir = typeof planFilesOrDirOrContent === 'string' ? planFilesOrDirOrContent : HARNESS_PLAN_DIR;
+    if (fs.existsSync(planDir)) {
+      const files = fs.readdirSync(planDir).filter(f => f.endsWith('.md'));
+      const taskPattern = new RegExp(activeTaskId.replace(/[^a-zA-Z0-9_-]/g, ''), 'i');
+      const matchedFile = files.find(f => taskPattern.test(f.replace(/[^a-zA-Z0-9_-]/g, '')));
+      if (matchedFile) {
+        planContent = fs.readFileSync(path.join(planDir, matchedFile), 'utf-8');
+      }
+    }
+  }
+
+  if (!planContent) {
+    errors.push(`[Dual-Write FAIL] 找不到對應建置藍圖 (No build plan found for ${activeTaskId})`);
+    return { valid: false, errors };
+  }
+
+  const inProgressStatuses = new Set(['進行中', 'in progress', 'in_progress', 'active']);
+  if (inProgressStatuses.has(normalizedStatus)) {
+    const hasActiveOrPendingSlice = /-\s*\[(?:-| )\]/.test(planContent);
+    if (!hasActiveOrPendingSlice) {
+      errors.push(`[Dual-Write FAIL] 任務為 ${status}，但建置藍圖中無進行中 [-] 或待處理 [ ] 切片`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
 function runCheck(options = {}) {
   let activeTask = 'none';
   let status = 'idle';
@@ -35,15 +110,25 @@ function runCheck(options = {}) {
     if (routeMatch) route = routeMatch[1].trim();
   }
 
-  // Check Spec existence
+  // Check Spec existence and structural validity (no empty or unformed specs)
   let hasSpec = false;
+  const specFilesToCheck = [];
   if (fs.existsSync(HARNESS_SPEC_DIR)) {
-    const files = fs.readdirSync(HARNESS_SPEC_DIR).filter(f => f.endsWith('.md'));
-    if (files.length > 0) hasSpec = true;
+    specFilesToCheck.push(...fs.readdirSync(HARNESS_SPEC_DIR).filter(f => f.endsWith('.md')).map(f => path.join(HARNESS_SPEC_DIR, f)));
   }
-  if (!hasSpec && fs.existsSync(PROJ_SPEC_DIR)) {
-    const files = fs.readdirSync(PROJ_SPEC_DIR).filter(f => f.endsWith('.md'));
-    if (files.length > 0) hasSpec = true;
+  if (fs.existsSync(PROJ_SPEC_DIR)) {
+    specFilesToCheck.push(...fs.readdirSync(PROJ_SPEC_DIR).filter(f => f.endsWith('.md')).map(f => path.join(PROJ_SPEC_DIR, f)));
+  }
+
+  for (const filePath of specFilesToCheck) {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const structRes = validateSpecStructure(content);
+      if (structRes.valid) {
+        hasSpec = true;
+        break;
+      }
+    } catch (_) {}
   }
 
   const hasContext = fs.existsSync(CONTEXT_PATH);
@@ -92,9 +177,13 @@ function runValidate() {
   if (fs.existsSync(AGENT_STATUS_PATH)) {
     const content = fs.readFileSync(AGENT_STATUS_PATH, 'utf-8');
     const statusMatch = content.match(/- Status:\s*([^\n]+)/);
+    const idMatch = content.match(/- ID:\s*([^\n]+)/);
+    const statusVal = statusMatch ? statusMatch[1].trim() : 'idle';
+    const activeTaskId = idMatch ? idMatch[1].trim() : 'none';
+
     if (statusMatch) {
-      const statusVal = statusMatch[1].trim().toLowerCase();
-      if (!VALID_STATUSES.has(statusVal)) {
+      const normalizedStatus = statusVal.toLowerCase();
+      if (!VALID_STATUSES.has(normalizedStatus)) {
         errors.push(`agent-status.md: Invalid status term '${statusVal}'`);
       }
     }
@@ -104,8 +193,27 @@ function runValidate() {
     if (sliceResult.result !== 'PASS') {
       errors.push(`[Slice Judge FAIL] ${sliceResult.reason}`);
     }
+
+    // Dual-Write Atomicity Verification
+    const dualWriteRes = validateDualWrite(activeTaskId, statusVal, HARNESS_PLAN_DIR);
+    if (!dualWriteRes.valid) {
+      errors.push(...dualWriteRes.errors);
+    }
   } else {
     errors.push('agent-status.md: File does not exist');
+  }
+
+  // Project Guard Hooks: auto-discover and run .github/scripts/*-guard.js
+  const scriptsDir = path.join(WORKSPACE_ROOT, '.github/scripts');
+  if (fs.existsSync(scriptsDir)) {
+    const guardFiles = fs.readdirSync(scriptsDir).filter(f => f.endsWith('-guard.js') && !f.endsWith('.test.js'));
+    for (const guardFile of guardFiles) {
+      const guardPath = path.join(scriptsDir, guardFile);
+      const res = spawnSync(`node "${guardPath}"`, { shell: true, encoding: 'utf-8', cwd: WORKSPACE_ROOT });
+      if (res.status !== 0) {
+        errors.push(`[Project Guard FAIL: ${guardFile}] ${res.stderr || res.stdout || 'Exited with code ' + res.status}`);
+      }
+    }
   }
 
   if (errors.length > 0) {
@@ -114,7 +222,7 @@ function runValidate() {
     process.exit(1);
   }
 
-  console.log('✅ Validation Passed: All task cards & status terms are compliant.');
+  console.log('✅ Validation Passed: All task cards, dual-write states & guard hooks are compliant.');
   process.exit(0);
 }
 
@@ -405,4 +513,17 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  validateSpecStructure,
+  validateDualWrite,
+  runCheck,
+  runValidate,
+  runVerify,
+  runCard,
+  runLoop
+};
+
